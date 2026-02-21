@@ -26,4 +26,19 @@ h1{font-size:18px;font-weight:900;letter-spacing:-1px;margin:0;line-height:1.2}
 .ld{width:10px;height:10px;border-radius:50%}
 .focus-row{outline:1.5px solid var(--ac);outline-offset:2px;border-radius:24px}
 @media(max-width:1000px){.shapes-grid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:600px){.shapes-grid{grid-template-columns:repeat(2,1fr)}.hdr{flex-direction:column;align-items:flex-start}.pill-group{align-items:flex-start}.row{justify-content:flex-start}}
+@media(max-width:600px){
+  html,body{height:auto;overflow:visible;overflow-y:scroll;-webkit-overflow-scrolling:touch}
+  .ctr{height:auto;min-height:100vh;overflow:visible;padding:.5rem}
+  .shapes-grid{grid-template-columns:repeat(2,1fr);flex:none}
+  .shape-card{min-height:180px}
+  .hdr{flex-direction:column;align-items:flex-start}
+  .pill-group{align-items:flex-start}
+  .row{justify-content:flex-start}
+  .pill{font-size:13px;padding:.25rem .5rem}
+  h1{font-size:15px}
+  .shape-card .sh-title{font-size:13px}
+  .shape-card .sh-sub{font-size:12px}
+  .li{font-size:12px}
+  .ns{flex-shrink:unset}
+  .nc svg{min-width:500px}
+}
