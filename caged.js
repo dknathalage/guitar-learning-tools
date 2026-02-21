@@ -1,10 +1,24 @@
+const STD_SHAPES = [
+  {id:'e',label:'E Shape',rootStr:[0,5],muted:[],
+    voices:[{str:0,fo:0},{str:1,fo:2},{str:2,fo:2},{str:3,fo:1},{str:4,fo:0},{str:5,fo:0}]},
+  {id:'a',label:'A Shape',rootStr:[1],muted:[0],
+    voices:[{str:1,fo:0},{str:2,fo:2},{str:3,fo:2},{str:4,fo:2},{str:5,fo:0}]},
+  {id:'d',label:'D Shape',rootStr:[2],muted:[0,1],
+    voices:[{str:2,fo:0},{str:3,fo:2},{str:4,fo:3},{str:5,fo:2}]},
+  {id:'c',label:'C Shape',rootStr:[1],muted:[0],barreOffset:-3,
+    voices:[{str:1,fo:3},{str:2,fo:2},{str:3,fo:0},{str:4,fo:1},{str:5,fo:0}]},
+  {id:'g',label:'G Shape',rootStr:[0,5],muted:[],barreOffset:-3,
+    voices:[{str:0,fo:3},{str:1,fo:2},{str:2,fo:0},{str:3,fo:0},{str:4,fo:0},{str:5,fo:3}]}
+];
+const STD_COLORS = {e:'#4DA6FF',a:'#FFB347',d:'#B980F0',c:'#FF6B6B',g:'#4ECB71'};
+
 const CFG = {
   notes: ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'],
   noteDisplay: ['C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B'],
   tuning: [4,9,2,7,11,4],
   stringNames: ['E','A','D','G','B','e'],
   intervalNames: {0:'R',1:'\u266d2',2:'2',3:'\u266d3',4:'3',5:'4',6:'\u266d5',7:'5',8:'#5',9:'6',10:'\u266d7',11:'7'},
-  shapeColors: {e:'#4DA6FF',a:'#FFB347',d:'#B980F0',c:'#FF6B6B',g:'#4ECB71'},
+  shapeColors: {...STD_COLORS},
   chordTypes: [
     {id:'maj',name:'Major',sym:'',iv:[0,4,7],fm:['R','3','5']},
     {id:'min',name:'Minor',sym:'m',iv:[0,3,7],fm:['R','\u266d3','5']},
@@ -19,24 +33,101 @@ const CFG = {
     {id:'add9',name:'Add 9',sym:'add9',iv:[0,4,7,14],fm:['R','3','5','9']},
     {id:'5',name:'Power',sym:'5',iv:[0,7],fm:['R','5']},
   ],
-  shapes: [
-    {id:'e',label:'E Shape',rootStr:[0,5],muted:[],
-      voices:[{str:0,fo:0},{str:1,fo:2},{str:2,fo:2},{str:3,fo:1},{str:4,fo:0},{str:5,fo:0}]},
-    {id:'a',label:'A Shape',rootStr:[1],muted:[0],
-      voices:[{str:1,fo:0},{str:2,fo:2},{str:3,fo:2},{str:4,fo:2},{str:5,fo:0}]},
-    {id:'d',label:'D Shape',rootStr:[2],muted:[0,1],
-      voices:[{str:2,fo:0},{str:3,fo:2},{str:4,fo:3},{str:5,fo:2}]},
-    {id:'c',label:'C Shape',rootStr:[1],muted:[0],barreOffset:-3,
-      voices:[{str:1,fo:3},{str:2,fo:2},{str:3,fo:0},{str:4,fo:1},{str:5,fo:0}]},
-    {id:'g',label:'G Shape',rootStr:[0,5],muted:[],barreOffset:-3,
-      voices:[{str:0,fo:3},{str:1,fo:2},{str:2,fo:0},{str:3,fo:0},{str:4,fo:0},{str:5,fo:3}]}
-  ]
+  shapes: STD_SHAPES.map(s => ({...s, voices: s.voices.map(v => ({...v}))})),
+  tunings: {
+    std: {
+      id:'std', name:'Standard', label:'EADGBE',
+      tuning:[4,9,2,7,11,4], stringNames:['E','A','D','G','B','e'],
+      shapes: STD_SHAPES,
+      shapeColors: STD_COLORS
+    },
+    halfDown: {
+      id:'halfDown', name:'Half Step Down', label:'E\u266dA\u266dD\u266dG\u266dB\u266de\u266d',
+      tuning:[3,8,1,6,10,3], stringNames:['E\u266d','A\u266d','D\u266d','G\u266d','B\u266d','e\u266d'],
+      shapes: STD_SHAPES,
+      shapeColors: STD_COLORS
+    },
+    dropD: {
+      id:'dropD', name:'Drop D', label:'DADGBE',
+      tuning:[2,9,2,7,11,4], stringNames:['D','A','D','G','B','e'],
+      shapeColors: {e:'#4DA6FF',a:'#FFB347',d:'#B980F0',c:'#FF6B6B',g:'#4ECB71',p:'#E0E0E0'},
+      shapes: [
+        {id:'e',label:'E Shape',rootStr:[0,5],muted:[],
+          voices:[{str:0,fo:2},{str:1,fo:2},{str:2,fo:2},{str:3,fo:1},{str:4,fo:0},{str:5,fo:0}]},
+        {id:'a',label:'A Shape',rootStr:[1],muted:[0],
+          voices:[{str:1,fo:0},{str:2,fo:2},{str:3,fo:2},{str:4,fo:2},{str:5,fo:0}]},
+        {id:'d',label:'D Shape',rootStr:[2],muted:[0,1],
+          voices:[{str:2,fo:0},{str:3,fo:2},{str:4,fo:3},{str:5,fo:2}]},
+        {id:'c',label:'C Shape',rootStr:[1],muted:[0],barreOffset:-3,
+          voices:[{str:1,fo:3},{str:2,fo:2},{str:3,fo:0},{str:4,fo:1},{str:5,fo:0}]},
+        {id:'g',label:'G Shape',rootStr:[0,5],muted:[],barreOffset:-3,
+          voices:[{str:0,fo:5},{str:1,fo:2},{str:2,fo:0},{str:3,fo:0},{str:4,fo:0},{str:5,fo:3}]},
+        {id:'p',label:'Power',rootStr:[0],muted:[3,4,5],
+          voices:[{str:0,fo:0},{str:1,fo:0},{str:2,fo:0}]}
+      ]
+    },
+    openG: {
+      id:'openG', name:'Open G', label:'DGDGBD',
+      tuning:[2,7,2,7,11,2], stringNames:['D','G','D','G','B','D'],
+      shapeColors: {bar:'#4DA6FF',a:'#FFB347',d:'#B980F0',sl:'#4ECB71'},
+      shapes: [
+        {id:'bar',label:'Barre',rootStr:[0,2,5],muted:[],
+          voices:[{str:0,fo:0},{str:1,fo:0},{str:2,fo:0},{str:3,fo:0},{str:4,fo:0},{str:5,fo:0}]},
+        {id:'a',label:'A Form',rootStr:[1,3],muted:[0],
+          voices:[{str:1,fo:0},{str:2,fo:2},{str:3,fo:2},{str:4,fo:2},{str:5,fo:0}]},
+        {id:'d',label:'D Form',rootStr:[2],muted:[0,1],
+          voices:[{str:2,fo:0},{str:3,fo:2},{str:4,fo:3},{str:5,fo:2}]},
+        {id:'sl',label:'Slide',rootStr:[0,2,5],muted:[],barreOffset:-2,
+          voices:[{str:0,fo:2},{str:1,fo:2},{str:2,fo:2},{str:3,fo:0},{str:4,fo:0},{str:5,fo:2}]}
+      ]
+    },
+    openD: {
+      id:'openD', name:'Open D', label:'DADF#AD',
+      tuning:[2,9,2,6,9,2], stringNames:['D','A','D','F#','A','D'],
+      shapeColors: {bar:'#4DA6FF',a:'#FFB347',up:'#B980F0',sl:'#4ECB71'},
+      shapes: [
+        {id:'bar',label:'Barre',rootStr:[0,2,5],muted:[],
+          voices:[{str:0,fo:0},{str:1,fo:0},{str:2,fo:0},{str:3,fo:0},{str:4,fo:0},{str:5,fo:0}]},
+        {id:'a',label:'A Form',rootStr:[1,4],muted:[0],
+          voices:[{str:1,fo:0},{str:2,fo:2},{str:3,fo:2},{str:4,fo:0},{str:5,fo:0}]},
+        {id:'up',label:'Upper',rootStr:[2,5],muted:[0,1],
+          voices:[{str:2,fo:0},{str:3,fo:2},{str:4,fo:3},{str:5,fo:2}]},
+        {id:'sl',label:'Slide',rootStr:[0,2,5],muted:[],barreOffset:-2,
+          voices:[{str:0,fo:2},{str:1,fo:2},{str:2,fo:2},{str:3,fo:0},{str:4,fo:0},{str:5,fo:2}]}
+      ]
+    },
+    dadgad: {
+      id:'dadgad', name:'DADGAD', label:'DADGAD',
+      tuning:[2,9,2,7,9,2], stringNames:['D','A','D','G','A','D'],
+      shapeColors: {bar:'#4DA6FF',mod:'#FFB347',up:'#B980F0'},
+      shapes: [
+        {id:'bar',label:'Barre',rootStr:[0,2,5],muted:[],
+          voices:[{str:0,fo:0},{str:1,fo:0},{str:2,fo:0},{str:3,fo:0},{str:4,fo:0},{str:5,fo:0}]},
+        {id:'mod',label:'Modal',rootStr:[0,2,5],muted:[],barreOffset:-2,
+          voices:[{str:0,fo:2},{str:1,fo:2},{str:2,fo:2},{str:3,fo:0},{str:4,fo:0},{str:5,fo:2}]},
+        {id:'up',label:'Upper',rootStr:[2,5],muted:[0,1],
+          voices:[{str:2,fo:0},{str:3,fo:2},{str:4,fo:2},{str:5,fo:2}]}
+      ]
+    }
+  }
 };
 
-let curType = 'maj', curRoot = 0, curShape = null;
+let curType = 'maj', curRoot = 0, curShape = null, curTuning = 'std';
 let curLayer = 0;
 let sortedShapeIds = [];
 let kbActive = false;
+
+function setTuning(id) {
+  const t = CFG.tunings[id];
+  if (!t) return;
+  curTuning = id;
+  CFG.tuning = [...t.tuning];
+  CFG.stringNames = [...t.stringNames];
+  CFG.shapes = t.shapes.map(s => ({...s, voices: s.voices.map(v => ({...v}))}));
+  CFG.shapeColors = {...t.shapeColors};
+  curShape = null;
+  U();
+}
 
 function adaptShape(sh) {
   const rb = CFG.tuning[sh.rootStr[0]], bo = sh.barreOffset || 0;
@@ -243,6 +334,14 @@ function U() {
   const ct = CFG.chordTypes.find(c => c.id === curType);
   const rn = CFG.noteDisplay[ri];
   const cn = `${rn}${ct.sym}`;
+  const tunDef = CFG.tunings[curTuning];
+
+  // Tuning dropdown
+  const tunEl = document.getElementById('tunSel');
+  tunEl.innerHTML = Object.values(CFG.tunings).map(t =>
+    `<option value="${t.id}"${t.id === curTuning ? ' selected' : ''}>${t.name} (${t.label})</option>`
+  ).join('');
+  tunEl.onchange = function() { setTuning(this.value); };
 
   document.getElementById('kPills').innerHTML =
     CFG.noteDisplay.map((n, i) =>
@@ -257,6 +356,8 @@ function U() {
   let gridHTML = '';
   const sortedShapes = [...adapted].sort((a, b) => getBf(a, ri) - getBf(b, ri));
   sortedShapeIds = sortedShapes.map(s => s.id);
+  const grid = document.getElementById('grid');
+  grid.style.gridTemplateColumns = `repeat(${CFG.shapes.length}, 1fr)`;
   sortedShapes.forEach(sh => {
     const col = CFG.shapeColors[sh.id];
     const r = resolve(sh, ri, ct.iv);
@@ -267,13 +368,19 @@ function U() {
       <div class="fb">${renderDiagram(r, col)}</div>
     </div>`;
   });
-  document.getElementById('grid').innerHTML = gridHTML;
+  grid.innerHTML = gridHTML;
 
   const shLabel = curShape ? CFG.shapes.find(s => s.id === curShape)?.label : 'All Shapes';
-  document.title = `${rn} ${ct.name} \u2014 ${shLabel}`;
+  const tunLabel = curTuning !== 'std' ? ` (${tunDef.name})` : '';
+  document.title = `${rn} ${ct.name} \u2014 ${shLabel}${tunLabel}`;
   document.getElementById('titleLine1').textContent = `${rn} ${ct.name}`;
-  document.getElementById('titleLine2').textContent = shLabel;
+  document.getElementById('titleLine2').textContent = shLabel + tunLabel;
   document.getElementById('nC').innerHTML = renderNeck(ri, ct);
+
+  // Dynamic legend
+  document.getElementById('leg').innerHTML = CFG.shapes.map(sh =>
+    `<div class="li"><div class="ld" style="background:${CFG.shapeColors[sh.id]}"></div>${sh.label}</div>`
+  ).join('');
 
   // Focus indicator
   const focusTargets = ['kPills', 'tPills', 'grid'];
