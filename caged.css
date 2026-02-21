@@ -39,6 +39,5 @@ h1{font-size:18px;font-weight:900;letter-spacing:-1px;margin:0;line-height:1.2}
   .shape-card .sh-title{font-size:13px}
   .shape-card .sh-sub{font-size:12px}
   .li{font-size:12px}
-  .ns{flex-shrink:unset}
-  .nc svg{min-width:500px}
+  .ns{display:none}
 }
