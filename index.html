@@ -46,6 +46,7 @@ html,body{overflow:visible}
 .section--fretboard .section-dot{background:#4ECB71}
 .section--chords .section-dot{background:#F0A030}
 .section--scales .section-dot{background:#38BDF8}
+.section--theory .section-dot{background:#C084FC}
 .section--ear .section-dot{background:#F472B6}
 
 /* cards grid */
@@ -77,6 +78,8 @@ html,body{overflow:visible}
 .section--chords .card:hover{border-color:#F0A030;box-shadow:0 8px 30px rgba(240,160,48,.1)}
 .section--scales .card::before{background:#38BDF8}
 .section--scales .card:hover{border-color:#38BDF8;box-shadow:0 8px 30px rgba(56,189,248,.1)}
+.section--theory .card::before{background:#C084FC}
+.section--theory .card:hover{border-color:#C084FC;box-shadow:0 8px 30px rgba(192,132,252,.1)}
 .section--ear .card::before{background:#F472B6}
 .section--ear .card:hover{border-color:#F472B6;box-shadow:0 8px 30px rgba(244,114,182,.1)}
 
@@ -104,6 +107,7 @@ html,body{overflow:visible}
 .section:nth-child(4){animation-delay:.15s}
 .section:nth-child(5){animation-delay:.2s}
 .section:nth-child(6){animation-delay:.25s}
+.section:nth-child(7){animation-delay:.3s}
 @keyframes sec-in{to{opacity:1;transform:none}}
 
 @media(max-width:600px){
@@ -139,6 +143,28 @@ html,body{overflow:visible}
     </div>
   </div>
 
+  <div class="section section--theory">
+    <div class="section-hdr">
+      <div class="section-dot"></div>
+      <span class="section-label">Theory (No Guitar Needed)</span>
+      <div class="section-line"></div>
+    </div>
+    <div class="cards">
+      <a href="fretboard-quiz.html" class="card">
+        <div class="card-title">Fretboard Quiz</div>
+        <div class="card-desc">Identify notes at fret positions and locate notes on strings — pure recall, no mic needed.</div>
+      </a>
+      <a href="interval-namer.html" class="card">
+        <div class="card-title">Interval Namer</div>
+        <div class="card-desc">Name intervals between notes and find notes at given intervals from any root.</div>
+      </a>
+      <a href="chord-speller.html" class="card">
+        <div class="card-title">Chord Speller</div>
+        <div class="card-desc">Spell chord notes from a name and identify chords from their note sets.</div>
+      </a>
+    </div>
+  </div>
+
   <div class="section section--fretboard">
     <div class="section-hdr">
       <div class="section-dot"></div>
@@ -168,10 +194,6 @@ html,body{overflow:visible}
       <div class="section-line"></div>
     </div>
     <div class="cards">
-      <div class="card card--soon">
-        <div class="card-title">Chord Speller</div>
-        <div class="card-desc">Given a chord name, identify the notes. Build chord formulas from memory.</div>
-      </div>
       <div class="card card--soon">
         <div class="card-title">Chord Tone Find</div>
         <div class="card-desc">Play the root, 3rd, 5th, or 7th of a chord anywhere on the fretboard.</div>

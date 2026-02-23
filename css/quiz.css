@@ -1,0 +1,40 @@
+/* ═══════════════════════════════════════════════════
+   Quiz Styles — Tap-based theory exercises (.qz-*)
+   ═══════════════════════════════════════════════════ */
+
+.qz-prompt{
+  font-family:'JetBrains Mono',monospace;font-size:28px;font-weight:700;
+  color:var(--ac);text-align:center;line-height:1.3;min-height:40px;
+}
+.qz-prompt-sub{
+  font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;
+  color:var(--mt);text-transform:uppercase;letter-spacing:1px;margin-bottom:.3rem;
+}
+.qz-choices{
+  display:grid;grid-template-columns:1fr 1fr;gap:.8rem;
+  max-width:360px;width:100%;margin:0 auto;
+}
+.qz-choice{
+  padding:.8rem 1rem;border-radius:12px;border:1.5px solid var(--bd);
+  background:var(--sf);color:var(--tx);
+  font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;
+  cursor:pointer;transition:all .2s;text-align:center;
+}
+.qz-choice:hover{border-color:#555;background:var(--sf2)}
+.qz-choice:active{transform:scale(.96)}
+.qz-choice.qz-correct{
+  border-color:#4ECB71;color:#4ECB71;background:rgba(78,203,113,.15);
+  box-shadow:0 0 15px rgba(78,203,113,.2);pointer-events:none;
+}
+.qz-choice.qz-wrong{
+  border-color:#FF6B6B;color:#FF6B6B;background:rgba(255,107,107,.15);
+  box-shadow:0 0 15px rgba(255,107,107,.2);pointer-events:none;
+}
+.qz-extra{text-align:center;min-height:0}
+.qz-extra svg{max-width:360px;width:100%}
+
+@media(max-width:600px){
+  .qz-prompt{font-size:22px}
+  .qz-choices{gap:.6rem;max-width:300px}
+  .qz-choice{font-size:14px;padding:.6rem .8rem}
+}

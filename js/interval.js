@@ -9,20 +9,7 @@ const INTV_DIFF = {
   advanced:    {label:'Advanced',    maxFret:19, naturalsOnly:false, timer:15, intervals:'all', tip:'All intervals \u00b7 15s timer'}
 };
 
-const INTERVALS = [
-  {semi:1,  name:'Minor 2nd',   abbr:'m2'},
-  {semi:2,  name:'Major 2nd',   abbr:'M2'},
-  {semi:3,  name:'Minor 3rd',   abbr:'m3'},
-  {semi:4,  name:'Major 3rd',   abbr:'M3'},
-  {semi:5,  name:'Perfect 4th', abbr:'P4'},
-  {semi:6,  name:'Tritone',     abbr:'TT'},
-  {semi:7,  name:'Perfect 5th', abbr:'P5'},
-  {semi:8,  name:'Minor 6th',   abbr:'m6'},
-  {semi:9,  name:'Major 6th',   abbr:'M6'},
-  {semi:10, name:'Minor 7th',   abbr:'m7'},
-  {semi:11, name:'Major 7th',   abbr:'M7'},
-  {semi:12, name:'Octave',      abbr:'P8'}
-];
+// INTERVALS now in shared.js
 
 let intvRef = null, intvInterval = null, intvTarget = null;
 

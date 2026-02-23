@@ -77,3 +77,34 @@ function rms(buf) {
   for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
   return Math.sqrt(sum / buf.length);
 }
+
+// ═══════════════════════════════════════════════════
+// Shared Music Theory Data
+// ═══════════════════════════════════════════════════
+
+const INTERVALS = [
+  {semi:1,  name:'Minor 2nd',   abbr:'m2'},
+  {semi:2,  name:'Major 2nd',   abbr:'M2'},
+  {semi:3,  name:'Minor 3rd',   abbr:'m3'},
+  {semi:4,  name:'Major 3rd',   abbr:'M3'},
+  {semi:5,  name:'Perfect 4th', abbr:'P4'},
+  {semi:6,  name:'Tritone',     abbr:'TT'},
+  {semi:7,  name:'Perfect 5th', abbr:'P5'},
+  {semi:8,  name:'Minor 6th',   abbr:'m6'},
+  {semi:9,  name:'Major 6th',   abbr:'M6'},
+  {semi:10, name:'Minor 7th',   abbr:'m7'},
+  {semi:11, name:'Major 7th',   abbr:'M7'},
+  {semi:12, name:'Octave',      abbr:'P8'}
+];
+
+const CHORD_TYPES = [
+  {id:'maj',  name:'Major',  sym:'',     iv:[0,4,7],    fm:['R','3','5']},
+  {id:'min',  name:'Minor',  sym:'m',    iv:[0,3,7],    fm:['R','\u266d3','5']},
+  {id:'7',    name:'Dom 7',  sym:'7',    iv:[0,4,7,10], fm:['R','3','5','\u266d7']},
+  {id:'maj7', name:'Maj 7',  sym:'maj7', iv:[0,4,7,11], fm:['R','3','5','7']},
+  {id:'m7',   name:'Min 7',  sym:'m7',   iv:[0,3,7,10], fm:['R','\u266d3','5','\u266d7']},
+  {id:'dim',  name:'Dim',    sym:'dim',  iv:[0,3,6],    fm:['R','\u266d3','\u266d5']},
+  {id:'aug',  name:'Aug',    sym:'+',    iv:[0,4,8],    fm:['R','3','#5']},
+  {id:'sus2', name:'Sus 2',  sym:'sus2', iv:[0,2,7],    fm:['R','2','5']},
+  {id:'sus4', name:'Sus 4',  sym:'sus4', iv:[0,5,7],    fm:['R','4','5']}
+];

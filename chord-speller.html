@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chord Speller — Guitar Theory Exercise</title>
+<meta name="description" content="Test your chord knowledge — spell chord notes and identify chords from their note sets.">
+<meta name="theme-color" content="#0e0e1a">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@300;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/shared.css">
+<link rel="stylesheet" href="css/note-trainer.css">
+<link rel="stylesheet" href="css/quiz.css">
+</head>
+<body>
+<div class="nt-wrap">
+  <header class="nt-hdr">
+    <h1>Chord Speller</h1>
+    <nav class="nt-nav">
+      <a href="index.html" class="pill" style="font-size:13px">Home</a>
+      <a href="fretboard-quiz.html" class="pill" style="font-size:13px">Fretboard</a>
+      <a href="interval-namer.html" class="pill" style="font-size:13px">Intervals</a>
+    </nav>
+  </header>
+  <div class="nt-stats">
+    <div class="nt-stat"><div class="nt-stat-val" id="qzScore">0</div><div class="nt-stat-lbl">Score</div></div>
+    <div class="nt-stat"><div class="nt-stat-val" id="qzStreak">0</div><div class="nt-stat-lbl">Streak</div></div>
+    <div class="nt-stat"><div class="nt-stat-val" id="qzAcc">&mdash;</div><div class="nt-stat-lbl">Accuracy</div></div>
+    <div class="nt-stat"><div class="nt-stat-val" id="qzBest">0</div><div class="nt-stat-lbl">Best</div></div>
+  </div>
+  <div class="nt-main">
+    <div class="nt-diff" id="qzDiff"></div>
+    <div class="nt-timer" id="qzTimer"></div>
+    <div class="qz-prompt" id="qzPrompt"></div>
+    <div class="qz-extra" id="qzExtra"></div>
+    <div class="qz-choices" id="qzChoices"></div>
+    <div class="nt-msg" id="qzMsg">Press Start to begin</div>
+  </div>
+  <div class="nt-controls">
+    <button class="nt-btn nt-primary" id="qzStart">Start</button>
+    <button class="nt-btn" id="qzSkip" style="display:none">Skip</button>
+    <button class="nt-btn nt-danger" id="qzStop" style="display:none">Stop</button>
+    <button class="nt-btn" id="qzReset" style="display:none">Reset</button>
+  </div>
+</div>
+<script src="js/shared.js"></script>
+<script src="js/quiz-core.js"></script>
+<script src="js/chord-speller.js"></script>
+</body>
+</html>
