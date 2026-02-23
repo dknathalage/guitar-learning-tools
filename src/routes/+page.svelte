@@ -164,7 +164,7 @@
     max-width: 640px;
     display: flex;
     flex-direction: column;
-    gap: 0;
+    gap: 1.25rem;
   }
 
   /* ── Chapter Card ── */
@@ -174,20 +174,14 @@
     border: 1px solid var(--bd);
     border-left: 3px solid var(--ch-color);
     border-radius: 14px;
-    padding: 1.25rem 1.5rem;
+    padding: 1.4rem 1.6rem;
     opacity: 0;
     animation: fadeUp .5s ease forwards;
     animation-delay: var(--delay, 0s);
   }
 
   .card-connector {
-    position: absolute;
-    left: 26px;
-    top: -14px;
-    width: 2px;
-    height: 14px;
-    background: var(--bd);
-    opacity: .5;
+    display: none;
   }
 
   .card-header {
@@ -249,15 +243,15 @@
     min-width: 0;
   }
   .card-title {
-    font-size: 1.1rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: var(--ch-color);
   }
   .card-progress {
     font-family: 'JetBrains Mono', monospace;
-    font-size: .65rem;
+    font-size: .75rem;
     color: var(--mt);
-    margin-top: .15rem;
+    margin-top: .2rem;
   }
 
   /* ── Card Body ── */
@@ -270,12 +264,12 @@
 
   .section-label {
     font-family: 'JetBrains Mono', monospace;
-    font-size: .6rem;
+    font-size: .7rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1.5px;
     color: var(--mt);
-    margin-bottom: .4rem;
+    margin-bottom: .5rem;
   }
 
   .theory-bullets {
@@ -283,13 +277,13 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: .35rem;
+    gap: .45rem;
   }
   .theory-bullets li {
-    font-size: .8rem;
+    font-size: .9rem;
     color: var(--tx);
-    line-height: 1.45;
-    padding-left: .9rem;
+    line-height: 1.5;
+    padding-left: 1rem;
     position: relative;
     opacity: .85;
   }
@@ -308,13 +302,13 @@
   .exercise-list {
     display: flex;
     flex-direction: column;
-    gap: .4rem;
+    gap: .5rem;
   }
   .exercise-link {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: .6rem .85rem;
+    padding: .7rem 1rem;
     background: var(--sf2);
     border: 1px solid var(--bd);
     border-radius: 10px;
@@ -329,7 +323,7 @@
     transform: translateX(3px);
   }
   .ex-name {
-    font-size: .85rem;
+    font-size: .95rem;
     font-weight: 600;
   }
   .ex-badges {
@@ -352,19 +346,19 @@
   .card-placeholder {
     display: flex;
     flex-direction: column;
-    gap: .4rem;
-    padding: .8rem;
+    gap: .5rem;
+    padding: .9rem;
     background: var(--sf2);
     border: 1px dashed var(--bd);
     border-radius: 10px;
-    font-size: .82rem;
+    font-size: .9rem;
     color: var(--mt);
   }
   .docs-link {
     color: var(--ch-color);
     text-decoration: none;
     font-family: 'JetBrains Mono', monospace;
-    font-size: .72rem;
+    font-size: .8rem;
     font-weight: 600;
     transition: opacity .15s;
   }
