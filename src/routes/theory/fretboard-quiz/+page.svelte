@@ -1,5 +1,6 @@
 <script>
   import { base } from '$app/paths';
+  import { saveExercise } from '$lib/progress.js';
   import { NOTES } from '$lib/constants/music.js';
   import { NT_NATURAL, NT_STR_NAMES, NT_TUNING, noteAt, fretForNote, shuffle, fbMiniBoard } from '$lib/music/fretboard.js';
 
@@ -205,6 +206,7 @@
   }
 
   function onStop() {
+    if (score > 0) saveExercise('fretboard-quiz', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle';
     clearTimer();
     choices = [];

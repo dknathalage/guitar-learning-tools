@@ -1,6 +1,7 @@
 <script>
   import { onDestroy } from 'svelte';
   import { base } from '$app/paths';
+  import { saveExercise } from '$lib/progress.js';
   import { NOTES, SCALES } from '$lib/constants/music.js';
   import { AudioManager } from '$lib/audio/AudioManager.js';
   import { NT_NATURAL, NT_TUNING, NT_STR_NAMES, BASE_MIDI, noteAt, scaleSequence } from '$lib/music/fretboard.js';
@@ -326,6 +327,7 @@
   }
 
   function onStop() {
+    if (score > 0) saveExercise('scale-runner', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle'; audio.stop(); clearTimer();
     showDetected(null);
     msgText = 'Stopped. Press Start to resume.';

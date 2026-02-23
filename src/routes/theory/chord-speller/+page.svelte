@@ -1,5 +1,6 @@
 <script>
   import { base } from '$app/paths';
+  import { saveExercise } from '$lib/progress.js';
   import { NOTES, CHORD_TYPES } from '$lib/constants/music.js';
 
   const CS_DIFF = {
@@ -217,6 +218,7 @@
   }
 
   function onStop() {
+    if (score > 0) saveExercise('chord-speller', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle';
     clearTimer();
     choices = [];

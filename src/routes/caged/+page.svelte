@@ -1,6 +1,10 @@
 <script>
+  import { onMount } from 'svelte';
   import { base } from '$app/paths';
+  import { markVisited } from '$lib/progress.js';
   import { NOTES } from '$lib/constants/music.js';
+
+  onMount(() => markVisited('caged-visualizer'));
   import { CFG, setTuning, adaptShape, getBf, resolve, renderDiagram, renderNeck } from '$lib/music/chords.js';
 
   let curType = $state('maj');

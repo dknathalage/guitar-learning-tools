@@ -1,6 +1,7 @@
 <script>
   import { onDestroy } from 'svelte';
   import { base } from '$app/paths';
+  import { saveExercise } from '$lib/progress.js';
   import { NOTES, CHORD_TYPES } from '$lib/constants/music.js';
   import { TonePlayer } from '$lib/audio/TonePlayer.js';
   import { semiToFreq } from '$lib/audio/pitch.js';
@@ -199,6 +200,7 @@
   }
 
   function onStop() {
+    if (score > 0) saveExercise('chord-quality', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle';
     clearTimer();
     tone.stop();

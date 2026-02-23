@@ -1,5 +1,6 @@
 <script>
   import { base } from '$app/paths';
+  import { saveExercise } from '$lib/progress.js';
   import { NOTES, INTERVALS } from '$lib/constants/music.js';
   import { NT_NATURAL } from '$lib/music/fretboard.js';
 
@@ -201,6 +202,7 @@
   }
 
   function onStop() {
+    if (score > 0) saveExercise('interval-namer', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle';
     clearTimer();
     choices = [];
