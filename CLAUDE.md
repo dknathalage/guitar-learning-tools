@@ -59,37 +59,50 @@ Each chapter has theory, exercises, and progress markers.
 - `README.md` — overview and learning path summary
 - CAGED Visualizer: https://dknathalage.github.io/caged-chord-visualizer/
 
-## Codebase (for the visualizer tool)
+## Codebase
 
-The CAGED Chord Visualizer and Note Trainer are pure vanilla web apps (HTML/CSS/JS, no frameworks):
+SvelteKit SPA with static adapter for GitHub Pages deployment.
 
 ```
-index.html              # Landing page / navigation hub
-caged.html              # CAGED Chord Visualizer
-note-find.html          # Note Find exercise
-string-traversal.html   # String Traversal exercise
-interval.html           # Interval Trainer exercise
-tuner.html              # Guitar Tuner
-css/
-  shared.css            # :root vars, reset, body, .pill, .row, h1
-  caged.css             # CAGED-specific styles
-  note-trainer.css      # Shared trainer styles (.nt-*)
-  tuner.css             # Tuner styles (.tu-*)
-js/
-  shared.js             # Shared constants (NOTES, TUNINGS, A4) + pitch utils (YIN, freqToNote, rms)
-  trainer-core.js       # Shared trainer infrastructure (state, audio, scoring, detection loop)
-  note-find.js          # Note Find exercise logic
-  string-traversal.js   # String Traversal exercise logic
-  interval.js           # Interval Trainer exercise logic
-  caged.js              # CAGED visualizer logic
-  tuner.js              # Guitar Tuner logic
-docs/                   # Curriculum chapters
+src/
+  app.html                           # SvelteKit shell (fonts, theme-color meta)
+  app.css                            # Global styles (CSS vars, reset, body, .pill)
+  lib/
+    constants/
+      music.js                       # NOTES, A4, TUNINGS, INTERVALS, CHORD_TYPES
+    audio/
+      pitch.js                       # semiToFreq, freqToNote, yinDetect, rms
+      AudioManager.js                # Web Audio lifecycle (mic, analyser, detection loop)
+    music/
+      fretboard.js                   # noteAt, fretForNote, renderFB, fbMiniBoard, shuffle
+      chords.js                      # CFG, STD_SHAPES, adaptShape, getBf, resolve, renderDiagram, renderNeck
+  routes/
+    +layout.svelte                   # Import app.css, render children
+    +layout.js                       # prerender = true
+    +page.svelte                     # Landing page
+    caged/+page.svelte               # CAGED Chord Visualizer
+    tuner/+page.svelte               # Guitar Tuner
+    exercises/
+      note-find/+page.svelte         # Note Find (mic-based)
+      string-traversal/+page.svelte  # String Traversal (mic-based)
+      interval/+page.svelte          # Interval Trainer (mic-based)
+    theory/
+      fretboard-quiz/+page.svelte    # Fretboard Quiz (tap-based)
+      interval-namer/+page.svelte    # Interval Namer (tap-based)
+      chord-speller/+page.svelte     # Chord Speller (tap-based)
+.github/workflows/deploy.yml        # Build + deploy to GitHub Pages
+svelte.config.js                     # Static adapter, base path = /guitar-learning
+vite.config.js
+package.json
+docs/                                # Curriculum chapters
 ```
 
-### Code Conventions (if modifying the visualizer)
+### Code Conventions
 
+- Svelte 5 runes: `$state()`, `$derived()`, `$effect()`, `$props()`
 - Abbreviated names: `ri` = root index, `ct` = chord type, `sh` = shape, `bf` = base fret
 - ALL_CAPS for constants: `CFG`, `MAX_FO`, `NF`
-- Keep code compact and terse
-- SVG built via string concatenation
-- No frameworks, no build tools, no bundler
+- SVG rendering via `{@html}` with pure functions returning SVG strings
+- Scoped `<style>` blocks per component
+- `{ base }` from `$app/paths` for all internal links
+- `AudioManager` class for mic lifecycle; `onDestroy` cleanup on navigation
