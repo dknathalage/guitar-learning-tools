@@ -1,6 +1,6 @@
 :root{--bg:#0D1117;--sf:#161B22;--sf2:#1C2129;--bd:#30363D;--tx:#E6EDF3;--mt:#8B949E;--ac:#58A6FF}
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%;overflow:hidden}
+html,body{height:100%}
 body{background:var(--bg);color:var(--tx);font-family:'Outfit',sans-serif}
 h1{font-size:18px;font-weight:900;letter-spacing:-1px;margin:0;line-height:1.2}
 .row{display:flex;gap:.4rem;justify-content:flex-end;align-items:center;flex-wrap:wrap;flex-shrink:0}
