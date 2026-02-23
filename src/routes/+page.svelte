@@ -80,14 +80,14 @@
       <div class="section-line"></div>
     </div>
     <div class="cards">
-      <div class="card card--soon">
+      <a href="{base}/exercises/chord-tone" class="card">
         <div class="card-title">Chord Tone Find</div>
         <div class="card-desc">Play the root, 3rd, 5th, or 7th of a chord anywhere on the fretboard.</div>
-      </div>
-      <div class="card card--soon">
+      </a>
+      <a href="{base}/exercises/chord-player" class="card">
         <div class="card-title">Chord Player</div>
         <div class="card-desc">Given a chord shape, play it note by note with pitch detection checking each string.</div>
-      </div>
+      </a>
     </div>
   </div>
 
@@ -98,14 +98,14 @@
       <div class="section-line"></div>
     </div>
     <div class="cards">
-      <div class="card card--soon">
+      <a href="{base}/exercises/scale-runner" class="card">
         <div class="card-title">Scale Runner</div>
         <div class="card-desc">Play through scale patterns position by position with pitch detection verification.</div>
-      </div>
-      <div class="card card--soon">
+      </a>
+      <a href="{base}/exercises/mode-trainer" class="card">
         <div class="card-title">Mode Trainer</div>
         <div class="card-desc">Practice the 7 modes of the major scale across fretboard positions.</div>
-      </div>
+      </a>
     </div>
   </div>
 
@@ -116,14 +116,14 @@
       <div class="section-line"></div>
     </div>
     <div class="cards">
-      <div class="card card--soon">
+      <a href="{base}/theory/interval-recognition" class="card">
         <div class="card-title">Interval Recognition</div>
         <div class="card-desc">Hear two notes played and identify the interval between them by ear.</div>
-      </div>
-      <div class="card card--soon">
+      </a>
+      <a href="{base}/theory/chord-quality" class="card">
         <div class="card-title">Chord Quality</div>
         <div class="card-desc">Hear a chord and identify whether it's major, minor, diminished, or 7th.</div>
-      </div>
+      </a>
     </div>
   </div>
 </div>
@@ -210,17 +210,6 @@
   .card-desc{
     font-family:'JetBrains Mono',monospace;font-size:.8rem;
     color:var(--mt);line-height:1.55;
-  }
-
-  /* coming soon */
-  .card--soon{opacity:.4;pointer-events:none;cursor:default}
-  .card--soon .card-title::after{
-    content:'soon';
-    font-family:'JetBrains Mono',monospace;font-size:.55rem;font-weight:700;
-    text-transform:uppercase;letter-spacing:1.5px;
-    color:var(--mt);background:var(--sf2);border:1px solid var(--bd);
-    border-radius:6px;padding:.15rem .4rem;
-    margin-left:.6rem;vertical-align:middle;
   }
 
   /* entrance */

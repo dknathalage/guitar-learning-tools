@@ -36,3 +36,20 @@ export const CHORD_TYPES = [
   {id:'sus2', name:'Sus 2',  sym:'sus2', iv:[0,2,7],    fm:['R','2','5']},
   {id:'sus4', name:'Sus 4',  sym:'sus4', iv:[0,5,7],    fm:['R','4','5']}
 ];
+
+export const SCALES = [
+  {id:'major',      name:'Major',            iv:[0,2,4,5,7,9,11]},
+  {id:'natural_min', name:'Natural Minor',   iv:[0,2,3,5,7,8,10]},
+  {id:'maj_pent',   name:'Major Pentatonic', iv:[0,2,4,7,9]},
+  {id:'min_pent',   name:'Minor Pentatonic', iv:[0,3,5,7,10]}
+];
+
+export const MODES = [
+  {id:'ionian',     name:'Ionian',     degree:1, iv:[0,2,4,5,7,9,11], chars:''},
+  {id:'dorian',     name:'Dorian',     degree:2, iv:[0,2,3,5,7,9,10], chars:'\u266b3, \u266b7'},
+  {id:'phrygian',   name:'Phrygian',   degree:3, iv:[0,1,3,5,7,8,10], chars:'\u266b2, \u266b3, \u266b6, \u266b7'},
+  {id:'lydian',     name:'Lydian',     degree:4, iv:[0,2,4,6,7,9,11], chars:'#4'},
+  {id:'mixolydian', name:'Mixolydian', degree:5, iv:[0,2,4,5,7,9,10], chars:'\u266b7'},
+  {id:'aeolian',    name:'Aeolian',    degree:6, iv:[0,2,3,5,7,8,10], chars:'\u266b3, \u266b6, \u266b7'},
+  {id:'locrian',    name:'Locrian',    degree:7, iv:[0,1,3,5,6,8,10], chars:'\u266b2, \u266b3, \u266b5, \u266b6, \u266b7'}
+];

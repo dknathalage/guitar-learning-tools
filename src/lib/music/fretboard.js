@@ -1,4 +1,4 @@
-import { NOTES, TUNINGS } from '$lib/constants/music.js';
+import { NOTES, TUNINGS, A4 } from '$lib/constants/music.js';
 
 export const NT_NATURAL = ['C','D','E','F','G','A','B'];
 export const NT_TUNING = TUNINGS.std.tuning;
@@ -112,4 +112,20 @@ export function fbMiniBoard(str, fret) {
   }
   s += `</svg>`;
   return s;
+}
+
+export function scaleSequence(ri, iv, startFret, maxFret) {
+  const end = Math.min(startFret + 4, maxFret);
+  const seq = [];
+  for (let s = 0; s < 6; s++) {
+    for (let f = startFret; f <= end; f++) {
+      const noteIdx = (NT_TUNING[s] + f) % 12;
+      const interval = ((noteIdx - ri) % 12 + 12) % 12;
+      if (iv.includes(interval)) {
+        seq.push({ note: NOTES[noteIdx], str: s, fret: f, midi: BASE_MIDI[s] + f });
+      }
+    }
+  }
+  seq.sort((a, b) => a.midi - b.midi);
+  return seq;
 }
