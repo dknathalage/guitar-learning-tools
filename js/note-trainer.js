@@ -8,23 +8,56 @@ const NT_TUNING = TUNINGS.std.tuning;
 const NT_STR_NAMES = TUNINGS.std.stringNames;
 const BASE_MIDI = [40, 45, 50, 55, 59, 64]; // E2 A2 D3 G3 B3 E4
 
+// ═══ Difficulty configs ═══
 const DIFF = {
-  beginner:    {label:'Beginner',    maxFret:5,  naturalsOnly:true,  timer:0, tip:'Natural notes only · Frets 0–5'},
-  intermediate:{label:'Intermediate',maxFret:12, naturalsOnly:false, timer:0, tip:'All 12 notes · Frets 0–12'},
+  beginner:    {label:'Beginner',    maxFret:5,  naturalsOnly:true,  timer:0,  tip:'Natural notes only · Frets 0–5'},
+  intermediate:{label:'Intermediate',maxFret:12, naturalsOnly:false, timer:0,  tip:'All 12 notes · Frets 0–12'},
   advanced:    {label:'Advanced',    maxFret:19, naturalsOnly:false, timer:10, tip:'All 12 notes · Frets 0–19 · 10s timer'}
 };
 
+const TRAV_DIFF = {
+  beginner:    {label:'Beginner',    maxFret:10, naturalsOnly:true,  timer:0,  tip:'Natural notes · Frets 0–10'},
+  intermediate:{label:'Intermediate',maxFret:14, naturalsOnly:false, timer:0,  tip:'All notes · Frets 0–14'},
+  advanced:    {label:'Advanced',    maxFret:19, naturalsOnly:false, timer:30, tip:'All notes · Frets 0–19 · 30s timer'}
+};
+
+const INTV_DIFF = {
+  beginner:    {label:'Beginner',    maxFret:10, naturalsOnly:true,  timer:0,  intervals:[3,4,5,7,12], tip:'5 common intervals · Naturals'},
+  intermediate:{label:'Intermediate',maxFret:14, naturalsOnly:false, timer:0,  intervals:'all', tip:'All 12 intervals'},
+  advanced:    {label:'Advanced',    maxFret:19, naturalsOnly:false, timer:15, intervals:'all', tip:'All intervals · 15s timer'}
+};
+
+const INTERVALS = [
+  {semi:1,  name:'Minor 2nd',   abbr:'m2'},
+  {semi:2,  name:'Major 2nd',   abbr:'M2'},
+  {semi:3,  name:'Minor 3rd',   abbr:'m3'},
+  {semi:4,  name:'Major 3rd',   abbr:'M3'},
+  {semi:5,  name:'Perfect 4th', abbr:'P4'},
+  {semi:6,  name:'Tritone',     abbr:'TT'},
+  {semi:7,  name:'Perfect 5th', abbr:'P5'},
+  {semi:8,  name:'Minor 6th',   abbr:'m6'},
+  {semi:9,  name:'Major 6th',   abbr:'M6'},
+  {semi:10, name:'Minor 7th',   abbr:'m7'},
+  {semi:11, name:'Major 7th',   abbr:'M7'},
+  {semi:12, name:'Octave',      abbr:'P8'}
+];
+
 // ═══ State ═══
 let st = {
+  exercise:'note', // note | traverse | interval
   phase:'idle', // idle | listening | success
   diff:'beginner',
   score:0, streak:0, best:0, correct:0, attempts:0,
-  target:null, // {note, str, fret}
+  target:null, // {note, str, fret, midi}
   recall:false,
   holdStart:0, wrongHold:0, wrongCd:0,
   timerLeft:0, timerRef:null,
   audioCtx:null, analyser:null, stream:null, rafId:null,
-  buf:null
+  buf:null,
+  // traversal
+  travNote:null, travFrets:null, travIdx:0, travDone:[],
+  // interval
+  intvRef:null, intvInterval:null, intvTarget:null
 };
 
 // ═══ DOM refs ═══
@@ -34,13 +67,56 @@ function initEls() {
   ['ntScore','ntStreak','ntAcc','ntBest','ntTarget','ntPos',
    'ntFretboard','ntFbWrap','ntDetected','ntCentsLbl','ntCentsInd',
    'ntHz','ntMsg','ntTimer','ntStart','ntSkip','ntStop','ntReset',
-   'ntDiff','ntChallenge','ntDetect','ntMode'].forEach(id => els[id] = $(id));
+   'ntDiff','ntChallenge','ntDetect','ntMode','ntExercise',
+   'ntTravSection','ntTravDots','ntTravNote',
+   'ntIntvSection','ntIntvRef','ntIntvArrow','ntIntvName','ntIntvTarget'
+  ].forEach(id => els[id] = $(id));
+}
+
+// ═══ Exercise selector ═══
+function renderExercise() {
+  const exercises = [
+    {key:'note', label:'Note Find'},
+    {key:'traverse', label:'String Traversal'},
+    {key:'interval', label:'Interval'}
+  ];
+  els.ntExercise.innerHTML = exercises.map(e =>
+    `<div class="pill${st.exercise===e.key?' on':''}" onclick="setExercise('${e.key}')">${e.label}</div>`
+  ).join('');
+}
+
+function setExercise(ex) {
+  if (st.phase !== 'idle') return;
+  st.exercise = ex;
+  renderExercise();
+  renderDiff();
+  renderMode();
+  showExerciseUI();
+}
+
+function showExerciseUI() {
+  const isNote = st.exercise === 'note';
+  const isTrav = st.exercise === 'traverse';
+  const isIntv = st.exercise === 'interval';
+  els.ntChallenge.style.display = isNote ? '' : 'none';
+  els.ntTravSection.style.display = isTrav ? '' : 'none';
+  els.ntIntvSection.style.display = isIntv ? '' : 'none';
+  els.ntFbWrap.style.display = isTrav ? 'none' : '';
+  els.ntMode.style.display = isTrav ? 'none' : '';
 }
 
 // ═══ Difficulty pills ═══
+function getDiffConfig() {
+  if (st.exercise === 'traverse') return TRAV_DIFF;
+  if (st.exercise === 'interval') return INTV_DIFF;
+  return DIFF;
+}
+
 function renderDiff() {
-  els.ntDiff.innerHTML = Object.keys(DIFF).map(k =>
-    `<div class="pill${st.diff===k?' on':''}" title="${DIFF[k].tip}" onclick="setDiff('${k}')">${DIFF[k].label}</div>`
+  const cfg = getDiffConfig();
+  if (!cfg[st.diff]) st.diff = 'beginner';
+  els.ntDiff.innerHTML = Object.keys(cfg).map(k =>
+    `<div class="pill${st.diff===k?' on':''}" title="${cfg[k].tip}" onclick="setDiff('${k}')">${cfg[k].label}</div>`
   ).join('');
 }
 
@@ -52,9 +128,13 @@ function setDiff(d) {
 
 // ═══ Mode toggle ═══
 function renderMode() {
+  if (st.exercise === 'traverse') {
+    els.ntMode.innerHTML = '';
+    return;
+  }
   els.ntMode.innerHTML =
-    `<div class="pill${st.recall?'':' on'}" title="Shows string, fret & fretboard" onclick="setMode(false)">Guided</div>` +
-    `<div class="pill${st.recall?' on':''}" title="Shows note & string only — you recall the fret" onclick="setMode(true)">Recall</div>`;
+    `<div class="pill${st.recall?'':' on'}" title="Shows position & fretboard" onclick="setMode(false)">Guided</div>` +
+    `<div class="pill${st.recall?' on':''}" title="Hides position — you recall it" onclick="setMode(true)">Recall</div>`;
 }
 
 function setMode(r) {
@@ -68,6 +148,16 @@ function noteAt(str, fret) {
   return NOTES[(NT_TUNING[str] + fret) % 12];
 }
 
+function fretForNote(str, noteName, maxFret) {
+  const base = NT_TUNING[str];
+  const ni = NOTES.indexOf(noteName);
+  const results = [];
+  for (let f = 0; f <= maxFret; f++) {
+    if ((base + f) % 12 === ni) results.push(f);
+  }
+  return results;
+}
+
 function pickTarget() {
   const d = DIFF[st.diff];
   const candidates = [];
@@ -78,12 +168,60 @@ function pickTarget() {
       candidates.push({note: n, str: s, fret: f, midi: BASE_MIDI[s] + f});
     }
   }
-  // Avoid repeating same note+string
   let pick;
   do {
     pick = candidates[Math.floor(Math.random() * candidates.length)];
   } while (st.target && pick.note === st.target.note && pick.str === st.target.str && candidates.length > 6);
   return pick;
+}
+
+// ═══ Traversal helpers ═══
+function pickTraversal() {
+  const d = TRAV_DIFF[st.diff];
+  const valid = [];
+  for (let ni = 0; ni < 12; ni++) {
+    const n = NOTES[ni];
+    if (d.naturalsOnly && !NT_NATURAL.includes(n)) continue;
+    let allStrings = true;
+    const frets = [];
+    for (let s = 0; s < 6; s++) {
+      const ff = fretForNote(s, n, d.maxFret);
+      if (ff.length === 0) { allStrings = false; break; }
+      frets.push(ff[0]);
+    }
+    if (allStrings) valid.push({note: n, frets});
+  }
+  let pick;
+  do {
+    pick = valid[Math.floor(Math.random() * valid.length)];
+  } while (st.travNote && pick.note === st.travNote && valid.length > 1);
+  return pick;
+}
+
+// ═══ Interval helpers ═══
+function pickInterval() {
+  const d = INTV_DIFF[st.diff];
+  const allowed = d.intervals === 'all'
+    ? INTERVALS : INTERVALS.filter(iv => d.intervals.includes(iv.semi));
+  const intv = allowed[Math.floor(Math.random() * allowed.length)];
+  const candidates = [];
+  for (let s = 0; s < 6; s++) {
+    for (let f = 0; f <= d.maxFret; f++) {
+      const n = noteAt(s, f);
+      if (d.naturalsOnly && !NT_NATURAL.includes(n)) continue;
+      const tni = (NOTES.indexOf(n) + intv.semi) % 12;
+      const tn = NOTES[tni];
+      if (d.naturalsOnly && !NT_NATURAL.includes(tn)) continue;
+      candidates.push({note: n, str: s, fret: f, midi: BASE_MIDI[s] + f});
+    }
+  }
+  if (candidates.length === 0) return pickInterval();
+  let ref;
+  do {
+    ref = candidates[Math.floor(Math.random() * candidates.length)];
+  } while (st.intvRef && ref.note === st.intvRef.note && ref.str === st.intvRef.str && candidates.length > 6);
+  const targetNote = NOTES[(NOTES.indexOf(ref.note) + intv.semi) % 12];
+  return {ref, interval: intv, targetNote};
 }
 
 // ═══ SVG Fretboard — 5-fret sliding window ═══
@@ -99,11 +237,8 @@ function renderFB(target, detected, isCorrect) {
   const isOpen = startFret === 0;
 
   let s = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
-
-  // Background
   s += `<rect x="${FRET_L - 4}" y="${TOP}" width="${FRET_R - FRET_L + 8}" height="${6 * FH}" rx="3" fill="#1a1a2e"/>`;
 
-  // Fret lines
   for (let i = 0; i <= WIN; i++) {
     const x = FRET_L + i * FW;
     s += i === 0 && isOpen
@@ -111,22 +246,19 @@ function renderFB(target, detected, isCorrect) {
       : `<line x1="${x}" y1="${TOP}" x2="${x}" y2="${TOP + 6 * FH}" stroke="#333" stroke-width="1.2"/>`;
   }
 
-  // Strings (tab orientation: high e at top, low E at bottom)
   for (let i = 0; i < 6; i++) {
-    const ri = 5 - i; // reverse: row 0 = string 5 (high e)
+    const ri = 5 - i;
     const y = TOP + i * FH + FH / 2;
     s += `<line x1="${FRET_L}" y1="${y}" x2="${FRET_R}" y2="${y}" stroke="#444" stroke-width="${2.2 - ri * .25}"/>`;
     s += `<text x="${FRET_L - 16}" y="${y}" text-anchor="middle" dominant-baseline="central" fill="#444" font-size="13" font-family="JetBrains Mono">${NT_STR_NAMES[ri]}</text>`;
   }
 
-  // Fret numbers
   for (let i = 0; i < WIN; i++) {
     const fn = startFret + i + (isOpen ? 1 : 1);
     const x = FRET_L + i * FW + FW / 2;
     s += `<text x="${x}" y="${TOP + 6 * FH + 11}" text-anchor="middle" fill="#444" font-size="11" font-family="JetBrains Mono">${startFret + i + (isOpen ? 1 : 1)}</text>`;
   }
 
-  // Inlay dots
   const inlays = [3,5,7,9,15,17,19,21];
   for (let i = 0; i < WIN; i++) {
     const fn = startFret + i + 1;
@@ -141,18 +273,16 @@ function renderFB(target, detected, isCorrect) {
     }
   }
 
-  // Target dot
   const tFretRel = target.fret - startFret;
   if (tFretRel >= 0 && tFretRel <= WIN) {
     const cy = TOP + (5 - target.str) * FH + FH / 2;
     let cx;
     if (target.fret === 0) {
-      cx = FRET_L + 2; // on the nut
+      cx = FRET_L + 2;
     } else {
       cx = FRET_L + (tFretRel - 1) * FW + FW / 2;
     }
     const col = isCorrect ? '#4ECB71' : '#58A6FF';
-    // Glow
     s += `<circle cx="${cx}" cy="${cy}" r="16" fill="${col}" opacity=".15"/>`;
     s += `<circle cx="${cx}" cy="${cy}" r="12" fill="${col}"/>`;
     const fs = target.note.length > 1 ? 10 : 13;
@@ -180,6 +310,7 @@ function showPhase() {
   els.ntReset.style.display = st.score > 0 || st.attempts > 0 ? '' : 'none';
 }
 
+// ═══ Note Find UI ═══
 function showChallenge() {
   if (!st.target) {
     els.ntTarget.textContent = '—';
@@ -201,6 +332,80 @@ function showChallenge() {
     els.ntPos.textContent = `String ${NT_STR_NAMES[t.str]} \u00b7 Fret ${t.fret}`;
     els.ntFretboard.innerHTML = renderFB(t, null, false);
     lbl.textContent = 'Find this note';
+  }
+}
+
+// ═══ Traversal UI ═══
+function showTraversal() {
+  if (!st.travNote) {
+    els.ntTravNote.textContent = '—';
+    els.ntTravDots.innerHTML = '';
+    els.ntFbWrap.style.display = 'none';
+    return;
+  }
+  els.ntTravNote.textContent = st.travNote;
+  renderTravDots();
+  els.ntFbWrap.style.display = 'none';
+  els.ntFretboard.innerHTML = '';
+}
+
+function renderTravDots() {
+  let html = '';
+  for (let s = 0; s < 6; s++) {
+    let cls = 'nt-trav-dot';
+    if (st.travDone[s]) cls += ' done';
+    else if (s === st.travIdx) cls += ' active';
+    html += `<div class="${cls}"><span class="nt-trav-dot-lbl">${NT_STR_NAMES[s]}</span></div>`;
+  }
+  els.ntTravDots.innerHTML = html;
+}
+
+function showTravFretReveal(str, fret, isCorrect) {
+  const target = {note: st.travNote, str, fret, midi: BASE_MIDI[str] + fret};
+  els.ntFbWrap.style.display = '';
+  els.ntFretboard.innerHTML = renderFB(target, null, isCorrect);
+  els.ntFbWrap.classList.add(isCorrect ? 'nt-success' : '', 'nt-flash');
+  setTimeout(() => {
+    els.ntFbWrap.classList.remove('nt-success', 'nt-flash');
+    if (st.exercise === 'traverse' && st.phase === 'listening') {
+      els.ntFbWrap.style.display = 'none';
+    }
+  }, 600);
+}
+
+function showTravAllPositions() {
+  let positions = [];
+  for (let s = 0; s < 6; s++) {
+    positions.push(`${NT_STR_NAMES[s]}:${st.travFrets[s]}`);
+  }
+  els.ntFbWrap.style.display = '';
+  els.ntFretboard.innerHTML =
+    `<div style="text-align:center;padding:1rem;font-family:'JetBrains Mono',monospace;color:var(--mt);font-size:14px">` +
+    `<div style="margin-bottom:.5rem;color:var(--ac)">${st.travNote} on every string:</div>` +
+    positions.map((p,i) =>
+      `<span style="display:inline-block;margin:.2rem .4rem;padding:.2rem .5rem;background:var(--sf2);border-radius:6px;color:${st.travDone[i]?'#4ECB71':'#FF6B6B'}">${p}</span>`
+    ).join('') + `</div>`;
+}
+
+// ═══ Interval UI ═══
+function showInterval() {
+  if (!st.intvRef) {
+    els.ntIntvRef.textContent = '—';
+    els.ntIntvName.textContent = '';
+    els.ntIntvTarget.textContent = '—';
+    els.ntFretboard.innerHTML = '';
+    return;
+  }
+  els.ntIntvRef.textContent = st.intvRef.note;
+  els.ntIntvName.textContent = st.intvInterval.name;
+  if (st.recall) {
+    els.ntIntvTarget.textContent = '?';
+    els.ntIntvTarget.className = 'nt-intv-note nt-intv-hidden';
+    els.ntFretboard.innerHTML = `<svg viewBox="0 0 396 212" xmlns="http://www.w3.org/2000/svg"><text x="198" y="106" text-anchor="middle" dominant-baseline="central" fill="#222" font-size="60" font-family="Outfit" font-weight="900">?</text></svg>`;
+  } else {
+    els.ntIntvTarget.textContent = st.intvTarget;
+    els.ntIntvTarget.className = 'nt-intv-note';
+    els.ntFretboard.innerHTML = renderFB(st.intvRef, null, false);
   }
 }
 
@@ -274,6 +479,15 @@ function detectLoop() {
   }
 
   const {note, cents, semi} = freqToNote(hz);
+  if (st.exercise === 'note') detectNote(note, cents, hz, semi);
+  else if (st.exercise === 'traverse') detectTraversal(note, cents, hz, semi);
+  else if (st.exercise === 'interval') detectIntervalNote(note, cents, hz, semi);
+
+  st.rafId = requestAnimationFrame(detectLoop);
+}
+
+// ═══ Note Find detection ═══
+function detectNote(note, cents, hz, semi) {
   const noteMatch = st.target && note === st.target.note;
   const octaveOk = !st.recall || !st.target || Math.abs((semi + 69) - st.target.midi) <= 1;
   const correct = noteMatch && octaveOk;
@@ -289,12 +503,10 @@ function detectLoop() {
     if (!st.holdStart) st.holdStart = performance.now();
     if (performance.now() - st.holdStart >= 300) {
       onCorrect();
-      st.rafId = requestAnimationFrame(detectLoop);
       return;
     }
   } else {
     st.holdStart = 0;
-    // Wrong note penalty — held 600ms, 2s cooldown between penalties
     if (!correct && st.phase === 'listening' && st.target) {
       if (!st.wrongHold) st.wrongHold = performance.now();
       const now = performance.now();
@@ -305,8 +517,102 @@ function detectLoop() {
       st.wrongHold = 0;
     }
   }
+}
 
-  st.rafId = requestAnimationFrame(detectLoop);
+// ═══ Traversal detection ═══
+function detectTraversal(note, cents, hz, semi) {
+  const noteMatch = note === st.travNote;
+  const curStr = st.travIdx;
+  const expectedMidi = BASE_MIDI[curStr] + st.travFrets[curStr];
+  const detectedMidi = semi + 69;
+  const midiOk = Math.abs(detectedMidi - expectedMidi) <= 1;
+  const correct = noteMatch && midiOk;
+  showDetected(note, cents, hz, correct);
+
+  if (noteMatch && !midiOk && st.phase === 'listening') {
+    els.ntMsg.textContent = `Right note, play on ${NT_STR_NAMES[curStr]} string!`;
+    els.ntMsg.className = 'nt-msg nt-err';
+  }
+
+  if (correct && st.phase === 'listening') {
+    st.wrongHold = 0;
+    if (!st.holdStart) st.holdStart = performance.now();
+    if (performance.now() - st.holdStart >= 300) {
+      onTravStringCorrect();
+      return;
+    }
+  } else {
+    st.holdStart = 0;
+    if (!correct && st.phase === 'listening') {
+      if (!st.wrongHold) st.wrongHold = performance.now();
+      const now = performance.now();
+      if (now - st.wrongHold >= 600 && now - st.wrongCd >= 2000) {
+        onWrong();
+      }
+    } else {
+      st.wrongHold = 0;
+    }
+  }
+}
+
+function onTravStringCorrect() {
+  st.travDone[st.travIdx] = true;
+  showTravFretReveal(st.travIdx, st.travFrets[st.travIdx], true);
+  st.travIdx++;
+  st.holdStart = 0;
+  renderTravDots();
+  if (st.travIdx >= 6) {
+    onTravComplete();
+  } else {
+    els.ntMsg.textContent = `Now play ${st.travNote} on ${NT_STR_NAMES[st.travIdx]}`;
+    els.ntMsg.className = 'nt-msg';
+  }
+}
+
+function onTravComplete() {
+  st.phase = 'success';
+  st.correct++;
+  st.attempts++;
+  st.streak++;
+  if (st.streak > st.best) st.best = st.streak;
+  let pts = 30 + st.streak * 3;
+  if (st.streak === 5) pts += 20;
+  if (st.streak === 10) pts += 50;
+  st.score += pts;
+  clearTimer();
+  updateStats();
+  els.ntMsg.textContent = `+${pts} points! All strings complete!`;
+  els.ntMsg.className = 'nt-msg';
+  setTimeout(() => {
+    els.ntFbWrap.classList.remove('nt-success', 'nt-flash');
+    if (st.phase === 'success') nextChallenge();
+  }, 1200);
+}
+
+// ═══ Interval detection ═══
+function detectIntervalNote(note, cents, hz, semi) {
+  const correct = note === st.intvTarget;
+  showDetected(note, cents, hz, correct);
+
+  if (correct && st.phase === 'listening') {
+    st.wrongHold = 0;
+    if (!st.holdStart) st.holdStart = performance.now();
+    if (performance.now() - st.holdStart >= 300) {
+      onCorrect();
+      return;
+    }
+  } else {
+    st.holdStart = 0;
+    if (!correct && st.phase === 'listening' && st.intvTarget) {
+      if (!st.wrongHold) st.wrongHold = performance.now();
+      const now = performance.now();
+      if (now - st.wrongHold >= 600 && now - st.wrongCd >= 2000) {
+        onWrong();
+      }
+    } else {
+      st.wrongHold = 0;
+    }
+  }
 }
 
 // ═══ Game logic ═══
@@ -318,7 +624,7 @@ function onWrong() {
   st.wrongCd = performance.now();
   st.wrongHold = 0;
   updateStats();
-  els.ntMsg.textContent = pen > 0 ? `−${pen} points` : 'Wrong!';
+  els.ntMsg.textContent = pen > 0 ? `\u2212${pen} points` : 'Wrong!';
   els.ntMsg.className = 'nt-msg nt-err';
 }
 
@@ -336,9 +642,18 @@ function onCorrect() {
 
   clearTimer();
   updateStats();
-  if (st.recall) els.ntPos.textContent = `Fret ${st.target.fret}`;
-  els.ntFretboard.innerHTML = renderFB(st.target, null, true);
-  els.ntFbWrap.classList.add('nt-success', 'nt-flash');
+
+  if (st.exercise === 'note') {
+    if (st.recall) els.ntPos.textContent = `Fret ${st.target.fret}`;
+    els.ntFretboard.innerHTML = renderFB(st.target, null, true);
+    els.ntFbWrap.classList.add('nt-success', 'nt-flash');
+  } else if (st.exercise === 'interval') {
+    els.ntIntvTarget.textContent = st.intvTarget;
+    els.ntIntvTarget.className = 'nt-intv-note';
+    els.ntFretboard.innerHTML = renderFB(st.intvRef, null, true);
+    els.ntFbWrap.classList.add('nt-success', 'nt-flash');
+  }
+
   els.ntMsg.textContent = `+${pts} points!`;
   els.ntMsg.className = 'nt-msg';
 
@@ -349,48 +664,114 @@ function onCorrect() {
 }
 
 function onSkip() {
+  if (st.exercise === 'traverse') { onTravSkip(); return; }
   st.streak = 0;
   st.attempts++;
   st.score = Math.max(0, st.score - 5);
   clearTimer();
   updateStats();
-  if (st.recall && st.target) {
-    els.ntPos.textContent = `Fret ${st.target.fret}`;
-    els.ntFretboard.innerHTML = renderFB(st.target, null, false);
-    els.ntMsg.textContent = `Was: Fret ${st.target.fret}`;
+
+  if (st.exercise === 'note') {
+    if (st.recall && st.target) {
+      els.ntPos.textContent = `Fret ${st.target.fret}`;
+      els.ntFretboard.innerHTML = renderFB(st.target, null, false);
+      els.ntMsg.textContent = `Was: Fret ${st.target.fret}`;
+      els.ntMsg.className = 'nt-msg nt-err';
+      setTimeout(() => nextChallenge(), 1500);
+    } else {
+      nextChallenge();
+    }
+  } else if (st.exercise === 'interval') {
+    els.ntIntvTarget.textContent = st.intvTarget;
+    els.ntIntvTarget.className = 'nt-intv-note';
+    els.ntFretboard.innerHTML = renderFB(st.intvRef, null, false);
+    els.ntMsg.textContent = `Was: ${st.intvTarget}`;
     els.ntMsg.className = 'nt-msg nt-err';
     setTimeout(() => nextChallenge(), 1500);
-  } else {
-    nextChallenge();
   }
 }
 
+function onTravSkip() {
+  st.streak = 0;
+  st.attempts++;
+  st.score = Math.max(0, st.score - 10);
+  clearTimer();
+  updateStats();
+  showTravAllPositions();
+  els.ntMsg.textContent = 'Skipped \u2014 positions revealed';
+  els.ntMsg.className = 'nt-msg nt-err';
+  setTimeout(() => nextChallenge(), 2500);
+}
+
 function onTimeout() {
+  if (st.exercise === 'traverse') { onTravTimeout(); return; }
   st.streak = 0;
   st.attempts++;
   st.score = Math.max(0, st.score - 5);
   updateStats();
-  if (st.recall && st.target) {
-    els.ntPos.textContent = `Fret ${st.target.fret}`;
-    els.ntFretboard.innerHTML = renderFB(st.target, null, false);
-    els.ntMsg.textContent = `Time's up! Was: Fret ${st.target.fret}`;
-    els.ntMsg.className = 'nt-msg nt-err';
-  } else {
-    els.ntMsg.textContent = 'Time\'s up!';
+
+  if (st.exercise === 'note') {
+    if (st.recall && st.target) {
+      els.ntPos.textContent = `Fret ${st.target.fret}`;
+      els.ntFretboard.innerHTML = renderFB(st.target, null, false);
+      els.ntMsg.textContent = `Time's up! Was: Fret ${st.target.fret}`;
+      els.ntMsg.className = 'nt-msg nt-err';
+    } else {
+      els.ntMsg.textContent = 'Time\'s up!';
+      els.ntMsg.className = 'nt-msg nt-err';
+    }
+  } else if (st.exercise === 'interval') {
+    els.ntIntvTarget.textContent = st.intvTarget;
+    els.ntIntvTarget.className = 'nt-intv-note';
+    els.ntFretboard.innerHTML = renderFB(st.intvRef, null, false);
+    els.ntMsg.textContent = `Time's up! Was: ${st.intvTarget}`;
     els.ntMsg.className = 'nt-msg nt-err';
   }
+
   setTimeout(() => {
     if (st.phase === 'listening') nextChallenge();
   }, st.recall ? 1500 : 800);
 }
 
+function onTravTimeout() {
+  st.streak = 0;
+  st.attempts++;
+  st.score = Math.max(0, st.score - 10);
+  updateStats();
+  showTravAllPositions();
+  els.ntMsg.textContent = 'Time\'s up! Positions revealed';
+  els.ntMsg.className = 'nt-msg nt-err';
+  setTimeout(() => {
+    if (st.phase === 'listening') nextChallenge();
+  }, 2500);
+}
+
 function nextChallenge() {
-  st.target = pickTarget();
-  st.phase = 'listening';
   st.holdStart = 0;
-  showChallenge();
+  st.phase = 'listening';
   showDetected(null);
-  els.ntMsg.textContent = 'Listening...';
+
+  if (st.exercise === 'note') {
+    st.target = pickTarget();
+    showChallenge();
+    els.ntMsg.textContent = 'Listening...';
+  } else if (st.exercise === 'traverse') {
+    const pick = pickTraversal();
+    st.travNote = pick.note;
+    st.travFrets = pick.frets;
+    st.travIdx = 0;
+    st.travDone = [false,false,false,false,false,false];
+    showTraversal();
+    els.ntMsg.textContent = `Play ${st.travNote} on ${NT_STR_NAMES[0]}`;
+  } else if (st.exercise === 'interval') {
+    const pick = pickInterval();
+    st.intvRef = pick.ref;
+    st.intvInterval = pick.interval;
+    st.intvTarget = pick.targetNote;
+    showInterval();
+    els.ntMsg.textContent = 'Listening...';
+  }
+
   els.ntMsg.className = 'nt-msg';
   startTimer();
 }
@@ -398,7 +779,7 @@ function nextChallenge() {
 // ═══ Timer ═══
 function startTimer() {
   clearTimer();
-  const d = DIFF[st.diff];
+  const d = getDiffConfig()[st.diff];
   if (!d.timer) { els.ntTimer.textContent = ''; return; }
   st.timerLeft = d.timer;
   els.ntTimer.textContent = st.timerLeft;
@@ -440,9 +821,14 @@ function onStop() {
 function onReset() {
   onStop();
   st.score = 0; st.streak = 0; st.best = 0; st.correct = 0; st.attempts = 0;
-  st.target = null;
+  st.target = null; st.travNote = null; st.intvRef = null;
   updateStats();
-  showChallenge();
+  showExerciseUI();
+  if (st.exercise === 'note') showChallenge();
+  else if (st.exercise === 'traverse') {
+    els.ntTravNote.textContent = '—';
+    els.ntTravDots.innerHTML = '';
+  } else if (st.exercise === 'interval') showInterval();
   els.ntMsg.textContent = 'Press Start to begin';
   els.ntMsg.className = 'nt-msg';
   showPhase();
@@ -451,10 +837,12 @@ function onReset() {
 // ═══ Init ═══
 function init() {
   initEls();
+  renderExercise();
   renderDiff();
   renderMode();
   updateStats();
   showPhase();
+  showExerciseUI();
   showChallenge();
 
   els.ntStart.addEventListener('click', onStart);
@@ -463,8 +851,8 @@ function init() {
   els.ntReset.addEventListener('click', onReset);
 }
 
-// Make setDiff accessible from onclick
 window.setDiff = setDiff;
 window.setMode = setMode;
+window.setExercise = setExercise;
 
 init();
