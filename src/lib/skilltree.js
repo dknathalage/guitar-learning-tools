@@ -8,6 +8,10 @@ export const CHAPTERS = [
       'Each fret = one semitone (half step) in the chromatic scale',
       'Understanding fretboard geometry enables playing in any position'
     ],
+    hints: [
+      'Start with natural notes on strings 5+6 — these are root notes for barre chords.',
+      'Aim for 80%+ on Fretboard Quiz before moving on.'
+    ],
     exercises: [
       { id: 'note-find',         name: 'Note Find',         path: '/exercises/note-find',         mic: true },
       { id: 'fretboard-quiz',    name: 'Fretboard Quiz',    path: '/theory/fretboard-quiz',       mic: false },
@@ -22,6 +26,10 @@ export const CHAPTERS = [
       '13 intervals within one octave, each with a unique sound character',
       'Major/minor distinction (4 vs 3 semitones) is fundamental to music',
       'Every chord, scale, and melody is built from interval stacking'
+    ],
+    hints: [
+      'Sing each interval as you play it — train your ear, not just your fingers.',
+      'Learn minor 3rd vs major 3rd first — they define major vs minor.'
     ],
     exercises: [
       { id: 'interval-trainer',     name: 'Interval Trainer',     path: '/exercises/interval',           mic: true },
@@ -38,6 +46,10 @@ export const CHAPTERS = [
       'Seventh chords add a 7th: maj7, dom7, min7, min7\u266d5',
       'The 3rd determines major vs minor \u2014 one semitone difference'
     ],
+    hints: [
+      'Every chord is a formula — know the formula, build it anywhere.',
+      'Start with Chord Speller, then Chord Tone Find with your guitar.'
+    ],
     exercises: [
       { id: 'chord-speller',  name: 'Chord Speller',    path: '/theory/chord-speller',       mic: false },
       { id: 'chord-tone',     name: 'Chord Tone Find',  path: '/exercises/chord-tone',       mic: true },
@@ -53,6 +65,10 @@ export const CHAPTERS = [
       'Shapes connect in sequence: C \u2192 A \u2192 G \u2192 E \u2192 D \u2192 C\u2026',
       'Any chord root has 5 positions across the neck using CAGED'
     ],
+    hints: [
+      'Learn E and A shapes first — most common barre forms.',
+      'Use the Visualizer to see how shapes connect across the neck.'
+    ],
     exercises: [
       { id: 'caged-visualizer', name: 'CAGED Visualizer', path: '/caged',                       mic: false },
       { id: 'chord-player',     name: 'Chord Player',     path: '/exercises/chord-player',      mic: true }
@@ -66,6 +82,10 @@ export const CHAPTERS = [
       'Major scale: W-W-H-W-W-W-H = 1-2-3-4-5-6-7',
       'Natural minor (Aeolian): 1-2-\u266d3-4-5-\u266d6-\u266d7',
       'Seven modes from rotating the major scale across root notes'
+    ],
+    hints: [
+      'Play scales slowly with a metronome — speed comes from accuracy.',
+      'Connect scale patterns to CAGED shapes you already know.'
     ],
     exercises: [
       { id: 'scale-runner',  name: 'Scale Runner',  path: '/exercises/scale-runner',   mic: true },
@@ -81,6 +101,10 @@ export const CHAPTERS = [
       'Roman numerals show chord functions: tonic, subdominant, dominant',
       'Same progressions appear across pop, rock, folk, and classical'
     ],
+    hints: [
+      'Memorize the pattern: maj-min-min-maj-maj-min-dim.',
+      'Listen for I-V-vi-IV in pop songs — it\'s everywhere.'
+    ],
     exercises: [
       { id: 'diatonic-quiz',     name: 'Diatonic Quiz',     path: '/theory/diatonic-quiz',     mic: false },
       { id: 'progression-namer', name: 'Progression Namer', path: '/theory/progression-namer', mic: false }
@@ -94,6 +118,10 @@ export const CHAPTERS = [
       'Note values subdivide: whole, half, quarter, eighth, sixteenth',
       'Counting: 1-2-3-4 (quarters), 1&2&3&4& (eighths), triplets',
       'Rhythm is the neglected dimension self-taught guitarists must internalize'
+    ],
+    hints: [
+      'Practice Rhythm Tap without guitar first — isolate timing.',
+      'Count out loud while tapping — it builds internal rhythm.'
     ],
     exercises: [
       { id: 'rhythm-tap', name: 'Rhythm Tap', path: '/exercises/rhythm-tap', mic: false }

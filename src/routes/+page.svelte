@@ -22,6 +22,12 @@
     return rec && (rec.bestScore >= THRESHOLD || rec.visited);
   }
 
+  let openHint = $state(-1);
+
+  function toggleHint(id) {
+    openHint = openHint === id ? -1 : id;
+  }
+
   function refreshProgress() {
     progress = loadProgress();
   }
@@ -62,7 +68,18 @@
               <div class="card-progress">Theory</div>
             {/if}
           </div>
+          {#if ch.hints?.length}
+            <button class="hint-btn" class:hint-btn-active={openHint === ch.id} onclick={() => toggleHint(ch.id)} title="Practice tips">?</button>
+          {/if}
         </div>
+
+        {#if openHint === ch.id && ch.hints?.length}
+          <div class="hint-panel">
+            {#each ch.hints as hint}
+              <div class="hint-item">{hint}</div>
+            {/each}
+          </div>
+        {/if}
 
         {#if ch.exercises.length > 0}
           <div class="exercise-list">
@@ -241,6 +258,48 @@
     font-size: .7rem;
     color: var(--mt);
     margin-top: .15rem;
+  }
+
+  /* ── Hint Button & Panel ── */
+  .hint-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1.5px solid var(--bd);
+    background: var(--sf2);
+    color: var(--mt);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .75rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: auto;
+    transition: all .15s;
+  }
+  .hint-btn:hover, .hint-btn-active {
+    border-color: var(--ch-color);
+    color: var(--ch-color);
+    background: color-mix(in srgb, var(--ch-color) 10%, var(--sf2));
+  }
+
+  .hint-panel {
+    display: flex;
+    flex-direction: column;
+    gap: .4rem;
+    padding: .6rem .75rem;
+    background: color-mix(in srgb, var(--ch-color) 4%, var(--sf2));
+    border: 1px solid color-mix(in srgb, var(--ch-color) 15%, var(--bd));
+    border-radius: 8px;
+  }
+  .hint-item {
+    font-size: .8rem;
+    color: var(--tx);
+    line-height: 1.45;
+    padding-left: .75rem;
+    border-left: 2px solid var(--ch-color);
   }
 
   /* ── Exercises ── */
