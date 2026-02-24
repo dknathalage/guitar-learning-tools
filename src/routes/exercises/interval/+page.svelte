@@ -7,6 +7,10 @@
   import { NT_NATURAL, NT_TUNING, NT_STR_NAMES, BASE_MIDI, noteAt, fretForNote, renderFB, fbDims } from '$lib/music/fretboard.js';
   import { LearningEngine } from '$lib/learning/engine.js';
   import { intervalTrainerConfig } from '$lib/learning/configs/intervalTrainer.js';
+  import LearningDashboard from '$lib/components/LearningDashboard.svelte';
+
+  let qStartTime = 0;
+  let showDash = $state(false);
 
   // --- Reactive state ---
   let phase = $state('idle');
@@ -46,7 +50,7 @@
 
   // Audio
   const audio = new AudioManager();
-  let engine = new LearningEngine(intervalTrainerConfig);
+  let engine = new LearningEngine(intervalTrainerConfig, 'interval-trainer');
 
   // --- Derived ---
   let accuracy = $derived(attempts > 0 ? Math.round(correct / attempts * 100) + '%' : '\u2014');
@@ -164,7 +168,7 @@
 
     checkHold(ok, () => {
       const pts = scoreCorrect(10, 2);
-      engine.report({ref: intvRef, interval: intvInterval, targetNote: intvTarget}, true);
+      engine.report({ref: intvRef, interval: intvInterval, targetNote: intvTarget}, true, performance.now() - qStartTime);
       targetDisplay = intvTarget;
       targetHidden = false;
       fbHtml = renderFB(intvRef, null, true);
@@ -193,6 +197,7 @@
     intvRef = pick.ref;
     intvInterval = pick.interval;
     intvTarget = pick.targetNote;
+    qStartTime = performance.now();
     showInterval();
     msgText = 'Listening...';
     msgErr = false;
@@ -237,6 +242,7 @@
   }
 
   function onStop() {
+    engine.save();
     if (score > 0) saveExercise('interval-trainer', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle'; audio.stop(); clearTimer();
     showDetected(null);
@@ -253,10 +259,11 @@
     showInterval();
     msgText = 'Press Start to begin';
     msgErr = false;
-    engine = new LearningEngine(intervalTrainerConfig);
+    engine.reset();
+    engine = new LearningEngine(intervalTrainerConfig, 'interval-trainer');
   }
 
-  onDestroy(() => { audio.stop(); clearTimer(); });
+  onDestroy(() => { engine.save(); audio.stop(); clearTimer(); });
 </script>
 
 <svelte:head>
@@ -327,7 +334,11 @@
     {#if showReset}
       <button class="nt-btn" onclick={onReset}>Reset</button>
     {/if}
+    <button class="nt-btn" onclick={() => showDash = !showDash}>{showDash ? 'Hide' : 'Show'} Dashboard</button>
   </div>
+  {#if showDash}
+    <LearningDashboard {engine} onclose={() => showDash = false} />
+  {/if}
 </div>
 
 <style>

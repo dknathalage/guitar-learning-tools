@@ -4,6 +4,10 @@
   import { NOTES, CHORD_TYPES } from '$lib/constants/music.js';
   import { LearningEngine } from '$lib/learning/engine.js';
   import { chordSpellerConfig } from '$lib/learning/configs/chordSpeller.js';
+  import LearningDashboard from '$lib/components/LearningDashboard.svelte';
+
+  let qStartTime = 0;
+  let showDash = $state(false);
 
   function csShuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
@@ -41,7 +45,7 @@
   let msgText = $state('Press Start to begin');
   let msgErr = $state(false);
 
-  let engine = new LearningEngine(chordSpellerConfig);
+  let engine = new LearningEngine(chordSpellerConfig, 'chord-speller');
   let curItem = null;
 
   // --- Derived ---
@@ -126,6 +130,7 @@
   // --- Flow ---
   function nextQ() {
     phase = 'active';
+    qStartTime = performance.now();
     const q = genQ();
     correctIdx = q.correctIdx;
     promptHtml = q.prompt;
@@ -156,7 +161,7 @@
       score += pts;
       msgText = `+${pts} points!`;
       msgErr = false;
-      engine.report(curItem, true);
+      engine.report(curItem, true, performance.now() - qStartTime);
       setTimeout(() => { if (phase === 'active') nextQ(); }, 800);
     } else {
       newStates[idx] = 'wrong';
@@ -168,7 +173,7 @@
       score -= pen;
       msgText = pen > 0 ? '\u2212' + pen + ' points' : 'Wrong!';
       msgErr = true;
-      engine.report(curItem, false);
+      engine.report(curItem, false, performance.now() - qStartTime);
       setTimeout(() => { if (phase === 'active') nextQ(); }, 1200);
     }
   }
@@ -212,6 +217,7 @@
   }
 
   function onStop() {
+    engine.save();
     if (score > 0) saveExercise('chord-speller', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle';
     clearTimer();
@@ -230,11 +236,15 @@
     best = 0;
     correct = 0;
     attempts = 0;
-    engine = new LearningEngine(chordSpellerConfig);
+    engine.reset();
+    engine = new LearningEngine(chordSpellerConfig, 'chord-speller');
     curItem = null;
     msgText = 'Press Start to begin';
     msgErr = false;
   }
+
+  import { onDestroy } from 'svelte';
+  onDestroy(() => { engine.save(); clearTimer(); });
 </script>
 
 <svelte:head>
@@ -284,7 +294,11 @@
     {#if showReset}
       <button class="nt-btn" onclick={onReset}>Reset</button>
     {/if}
+    <button class="nt-btn" onclick={() => showDash = !showDash}>{showDash ? 'Hide' : 'Show'} Dashboard</button>
   </div>
+  {#if showDash}
+    <LearningDashboard {engine} onclose={() => showDash = false} />
+  {/if}
 </div>
 
 <style>

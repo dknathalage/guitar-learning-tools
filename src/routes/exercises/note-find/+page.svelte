@@ -7,7 +7,10 @@
   import { NT_NATURAL, NT_TUNING, NT_STR_NAMES, BASE_MIDI, noteAt, fretForNote, renderFB, fbDims } from '$lib/music/fretboard.js';
   import { LearningEngine } from '$lib/learning/engine.js';
   import { noteFindConfig } from '$lib/learning/configs/noteFind.js';
+  import LearningDashboard from '$lib/components/LearningDashboard.svelte';
 
+  let qStartTime = 0;
+  let showDash = $state(false);
 
   // --- Reactive state ---
   let phase = $state('idle');
@@ -43,7 +46,7 @@
 
   // Audio
   const audio = new AudioManager();
-  let engine = new LearningEngine(noteFindConfig);
+  let engine = new LearningEngine(noteFindConfig, 'note-find');
 
   // --- Derived ---
   let accuracy = $derived(attempts > 0 ? Math.round(correct / attempts * 100) + '%' : '\u2014');
@@ -167,7 +170,7 @@
 
     checkHold(ok, () => {
       const pts = scoreCorrect(10, 2);
-      engine.report(target, true);
+      engine.report(target, true, performance.now() - qStartTime);
       fbHtml = renderFB(target, null, true);
       fbSuccess = true;
       fbFlash = true;
@@ -191,6 +194,7 @@
     holdStart = 0; phase = 'listening';
     showDetected(null);
     target = pickTarget();
+    qStartTime = performance.now();
     showChallenge();
     msgText = 'Listening...';
     msgErr = false;
@@ -240,6 +244,7 @@
   }
 
   function onStop() {
+    engine.save();
     if (score > 0) saveExercise('note-find', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle'; audio.stop(); clearTimer();
     showDetected(null);
@@ -250,14 +255,15 @@
   function onReset() {
     onStop();
     score = 0; streak = 0; best = 0; correct = 0; attempts = 0;
-    engine = new LearningEngine(noteFindConfig);
+    engine.reset();
+    engine = new LearningEngine(noteFindConfig, 'note-find');
     target = null;
     showChallenge();
     msgText = 'Press Start to begin';
     msgErr = false;
   }
 
-  onDestroy(() => { audio.stop(); clearTimer(); });
+  onDestroy(() => { engine.save(); audio.stop(); clearTimer(); });
 </script>
 
 <svelte:head>
@@ -331,7 +337,11 @@
     {#if showReset}
       <button class="nt-btn" onclick={onReset}>Reset</button>
     {/if}
+    <button class="nt-btn" onclick={() => showDash = !showDash}>{showDash ? 'Hide' : 'Show'} Dashboard</button>
   </div>
+  {#if showDash}
+    <LearningDashboard {engine} onclose={() => showDash = false} />
+  {/if}
 </div>
 
 <style>

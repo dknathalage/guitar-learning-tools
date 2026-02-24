@@ -5,14 +5,13 @@
   import { NOTES, CHORD_TYPES } from '$lib/constants/music.js';
   import { TonePlayer } from '$lib/audio/TonePlayer.js';
   import { semiToFreq } from '$lib/audio/pitch.js';
-
-  const CQ_DIFF = {
-    beginner:     { label: 'Beginner',     types: ['maj', 'min'],                                                          timer: 0,  tip: 'Major & Minor' },
-    intermediate: { label: 'Intermediate', types: ['maj', 'min', 'dim', 'aug', '7'],                                       timer: 15, tip: '+Dim/Aug/Dom7 \u00b7 15s' },
-    advanced:     { label: 'Advanced',     types: ['maj', 'min', 'dim', 'aug', '7', 'maj7', 'm7', 'sus2', 'sus4'],         timer: 10, tip: 'All 9 types \u00b7 10s' }
-  };
+  import { LearningEngine } from '$lib/learning/engine.js';
+  import { chordQualityConfig } from '$lib/learning/configs/chordQuality.js';
+  import LearningDashboard from '$lib/components/LearningDashboard.svelte';
 
   const tone = new TonePlayer();
+  let qStartTime = 0;
+  let showDash = $state(false);
 
   function cqShuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
@@ -24,7 +23,8 @@
 
   // --- Reactive state ---
   let phase = $state('idle');
-  let diff = $state('beginner');
+  let engine = new LearningEngine(chordQualityConfig, 'chord-quality');
+  let curItem = null;
   let score = $state(0);
   let streak = $state(0);
   let best = $state(0);
@@ -51,16 +51,10 @@
   let showStop = $derived(phase !== 'idle');
   let showReset = $derived(score > 0 || attempts > 0);
 
-  // --- Difficulty ---
-  function setDiff(d) {
-    if (phase !== 'idle') return;
-    diff = d;
-  }
-
   // --- Timer ---
   function startTimer() {
     clearTimer();
-    const d = CQ_DIFF[diff];
+    const d = engine.getParams();
     if (!d.timer) { timerLeft = 0; return; }
     timerLeft = d.timer;
     timerRef = setInterval(() => {
@@ -82,16 +76,15 @@
 
   // --- Question generation ---
   function genQ() {
-    const d = CQ_DIFF[diff];
-    const allowedTypes = CHORD_TYPES.filter(ct => d.types.includes(ct.id));
-    const ct = allowedTypes[Math.floor(Math.random() * allowedTypes.length)];
-
-    // Root semitone: -9 to +3 (C4 to Eb4)
-    const rootSemi = Math.floor(Math.random() * 13) - 9;
+    const d = engine.getParams();
+    curItem = engine.next();
+    const ct = CHORD_TYPES.find(c => c.id === curItem.ctId);
+    const rootSemi = curItem.rootSemi;
     const freqs = ct.iv.map(i => semiToFreq(rootSemi + i));
 
     // Correct answer
     const correctLabel = ct.name;
+    const allowedTypes = CHORD_TYPES.filter(c => d.types.includes(c.id));
     let pool = allowedTypes.filter(c => c.id !== ct.id);
     if (pool.length < 3) pool = CHORD_TYPES.filter(c => c.id !== ct.id);
     cqShuffle(pool);
@@ -127,6 +120,7 @@
     msgErr = false;
     currentFreqs = q.freqs;
     setTimeout(() => playCurrentChord(), 100);
+    qStartTime = performance.now();
     startTimer();
   }
 
@@ -148,6 +142,7 @@
       score += pts;
       msgText = `+${pts} points!`;
       msgErr = false;
+      engine.report(curItem, true, performance.now() - qStartTime);
       setTimeout(() => { if (phase === 'active') nextQ(); }, 800);
     } else {
       newStates[idx] = 'wrong';
@@ -159,6 +154,7 @@
       score -= pen;
       msgText = pen > 0 ? '\u2212' + pen + ' points' : 'Wrong!';
       msgErr = true;
+      engine.report(curItem, false, performance.now() - qStartTime);
       setTimeout(() => { if (phase === 'active') nextQ(); }, 1200);
     }
   }
@@ -175,6 +171,7 @@
     score -= pen;
     msgText = `Time\u2019s up!` + (pen > 0 ? ` \u2212${pen}` : '');
     msgErr = true;
+    engine.report(curItem, false);
     setTimeout(() => { if (phase === 'active') nextQ(); }, 1500);
   }
 
@@ -191,6 +188,7 @@
     score -= pen;
     msgText = 'Skipped.' + (pen > 0 ? ` \u2212${pen}` : '');
     msgErr = true;
+    engine.report(curItem, false);
     setTimeout(() => { if (phase === 'active') nextQ(); }, 1200);
   }
 
@@ -200,6 +198,7 @@
   }
 
   function onStop() {
+    engine.save();
     if (score > 0) saveExercise('chord-quality', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle';
     clearTimer();
@@ -214,6 +213,9 @@
 
   function onReset() {
     onStop();
+    engine.reset();
+    engine = new LearningEngine(chordQualityConfig, 'chord-quality');
+    curItem = null;
     score = 0;
     streak = 0;
     best = 0;
@@ -223,7 +225,7 @@
     msgErr = false;
   }
 
-  onDestroy(() => { tone.stop(); clearTimer(); });
+  onDestroy(() => { engine.save(); tone.stop(); clearTimer(); });
 </script>
 
 <svelte:head>
@@ -247,11 +249,6 @@
     <div class="nt-stat"><div class="nt-stat-val">{best}</div><div class="nt-stat-lbl">Best</div></div>
   </div>
   <div class="nt-main">
-    <div class="nt-diff">
-      {#each Object.entries(CQ_DIFF) as [key, cfg]}
-        <button class="pill{diff === key ? ' on' : ''}" title={cfg.tip} onclick={() => setDiff(key)} disabled={phase !== 'idle'}>{cfg.label}</button>
-      {/each}
-    </div>
     <div class="nt-timer">{timerLeft > 0 ? timerLeft : ''}</div>
     <div class="qz-prompt">{@html promptHtml}</div>
     <div class="qz-extra">{@html extraHtml}</div>
@@ -281,7 +278,11 @@
     {#if showReset}
       <button class="nt-btn" onclick={onReset}>Reset</button>
     {/if}
+    <button class="nt-btn" onclick={() => showDash = !showDash}>{showDash ? 'Hide' : 'Show'} Dashboard</button>
   </div>
+  {#if showDash}
+    <LearningDashboard {engine} onclose={() => showDash = false} />
+  {/if}
 </div>
 
 <style>
@@ -295,7 +296,6 @@
   .nt-stat-val{font-size:20px;font-weight:700;color:var(--ac)}
   .nt-stat-lbl{font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px}
   .nt-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;min-height:0}
-  .nt-diff{display:flex;gap:.4rem;justify-content:center;margin-bottom:.2rem}
   .nt-timer{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:#FF6B6B;text-align:center;min-height:30px}
   .nt-msg{text-align:center;font-size:14px;color:var(--mt);min-height:20px}
   .nt-msg.nt-err{color:#FF6B6B}

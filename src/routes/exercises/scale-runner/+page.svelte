@@ -5,16 +5,15 @@
   import { NOTES, SCALES } from '$lib/constants/music.js';
   import { AudioManager } from '$lib/audio/AudioManager.js';
   import { NT_NATURAL, NT_TUNING, NT_STR_NAMES, BASE_MIDI, noteAt, scaleSequence, FB, drawBoard } from '$lib/music/fretboard.js';
+  import { LearningEngine } from '$lib/learning/engine.js';
+  import { scaleRunnerConfig } from '$lib/learning/configs/scaleRunner.js';
+  import LearningDashboard from '$lib/components/LearningDashboard.svelte';
 
-  const SR_DIFF = {
-    beginner:    {label:'Beginner',    scales:['maj_pent','min_pent'], naturalsOnly:true,  dir:'up',   timer:0,  tip:'Pentatonics \u00b7 Naturals \u00b7 Ascending'},
-    intermediate:{label:'Intermediate',scales:['major','natural_min','maj_pent','min_pent'], naturalsOnly:false, dir:'up',   timer:0,  tip:'Major/Minor \u00b7 All keys \u00b7 Ascending'},
-    advanced:    {label:'Advanced',    scales:['major','natural_min','maj_pent','min_pent'], naturalsOnly:false, dir:'updown', timer:45, tip:'Up+Down \u00b7 45s timer'}
-  };
+  let qStartTime = 0;
+  let showDash = $state(false);
 
   // --- Reactive state ---
   let phase = $state('idle');
-  let diff = $state('beginner');
   let score = $state(0);
   let streak = $state(0);
   let best = $state(0);
@@ -48,22 +47,20 @@
   // Audio
   const audio = new AudioManager();
 
+  // Adaptive learning engine
+  let engine = new LearningEngine(scaleRunnerConfig, 'scale-runner');
+  let curItem = null;
+
   // --- Derived ---
   let accuracy = $derived(attempts > 0 ? Math.round(correct / attempts * 100) + '%' : '\u2014');
   let showStart = $derived(phase === 'idle');
   let showActive = $derived(phase !== 'idle');
   let showReset = $derived(score > 0 || attempts > 0);
 
-  // --- Difficulty ---
-  function setDiff(d) {
-    if (phase !== 'idle') return;
-    diff = d;
-  }
-
   // --- Timer ---
   function startTimer() {
     clearTimer();
-    const d = SR_DIFF[diff];
+    const d = engine.getParams();
     if (!d.timer) { timerLeft = 0; return; }
     timerLeft = d.timer;
     timerRef = setInterval(() => {
@@ -168,13 +165,12 @@
 
   // --- Challenge picking ---
   function pickChallenge() {
-    const d = SR_DIFF[diff];
-    const allowedScales = SCALES.filter(sc => d.scales.includes(sc.id));
-    const scale = allowedScales[Math.floor(Math.random() * allowedScales.length)];
-    const roots = d.naturalsOnly ? NT_NATURAL : NOTES;
-    const root = roots[Math.floor(Math.random() * roots.length)];
-    const ri = NOTES.indexOf(root);
-    const startFret = Math.floor(Math.random() * 8) + 1;
+    const d = engine.getParams();
+    curItem = engine.next();
+    const ri = curItem.rootIdx;
+    const root = NOTES[ri];
+    const scale = SCALES.find(sc => sc.id === curItem.scaleId);
+    const startFret = curItem.startFret;
     let seq = scaleSequence(ri, scale.iv, startFret, startFret + 4);
     if (seq.length < 5) return pickChallenge();
     if (d.dir === 'updown') {
@@ -189,6 +185,7 @@
     noteIdx++;
     holdStart = 0;
     if (noteIdx >= challenge.seq.length) {
+      engine.report(curItem, true, performance.now() - qStartTime);
       const pts = scoreCorrect(40, 3);
       msgText = `+${pts} points! Scale complete!`;
       msgErr = false;
@@ -228,6 +225,7 @@
   function nextChallenge() {
     holdStart = 0; phase = 'listening';
     showDetected(null);
+    qStartTime = performance.now();
     const pick = pickChallenge();
     challenge = pick;
     noteIdx = 0;
@@ -254,6 +252,7 @@
   }
 
   function onSkip() {
+    if (curItem) engine.report(curItem, false);
     streak = 0; attempts++;
     score = Math.max(0, score - 10);
     clearTimer();
@@ -267,6 +266,7 @@
   }
 
   function onTimeout() {
+    if (curItem) engine.report(curItem, false);
     streak = 0; attempts++;
     score = Math.max(0, score - 10);
     msgText = "Time's up! Scale revealed";
@@ -279,6 +279,7 @@
   }
 
   function onStop() {
+    engine.save();
     if (score > 0) saveExercise('scale-runner', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle'; audio.stop(); clearTimer();
     showDetected(null);
@@ -295,11 +296,14 @@
     fbHtml = '';
     fbSuccess = false;
     fbFlash = false;
+    engine.reset();
+    engine = new LearningEngine(scaleRunnerConfig, 'scale-runner');
+    curItem = null;
     msgText = 'Press Start to begin';
     msgErr = false;
   }
 
-  onDestroy(() => { audio.stop(); clearTimer(); });
+  onDestroy(() => { engine.save(); audio.stop(); clearTimer(); });
 </script>
 
 <svelte:head>
@@ -325,12 +329,6 @@
   </div>
 
   <div class="nt-main">
-    <div class="nt-diff">
-      {#each Object.entries(SR_DIFF) as [key, cfg]}
-        <button class="pill{diff === key ? ' on' : ''}" title={cfg.tip} onclick={() => setDiff(key)} disabled={phase !== 'idle'}>{cfg.label}</button>
-      {/each}
-    </div>
-
     <div class="nt-timer">{timerLeft > 0 ? timerLeft : ''}</div>
 
     <div class="nt-scale-section">
@@ -374,7 +372,11 @@
     {#if showReset}
       <button class="nt-btn" onclick={onReset}>Reset</button>
     {/if}
+    <button class="nt-btn" onclick={() => showDash = !showDash}>{showDash ? 'Hide' : 'Show'} Dashboard</button>
   </div>
+  {#if showDash}
+    <LearningDashboard {engine} onclose={() => showDash = false} />
+  {/if}
 </div>
 
 <style>
@@ -406,7 +408,6 @@
   .nt-btn:hover{border-color:#555;color:var(--tx)}
   .nt-btn.nt-primary{border-color:var(--ac);color:var(--ac);background:rgba(88,166,255,.1)}
   .nt-btn.nt-danger{border-color:#FF6B6B;color:#FF6B6B;background:rgba(255,107,107,.08)}
-  .nt-diff{display:flex;gap:.4rem;justify-content:center;margin-bottom:.2rem}
   .nt-timer{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:#FF6B6B;text-align:center;min-height:30px}
   .nt-msg{text-align:center;font-size:14px;color:var(--mt);min-height:20px}
   .nt-msg.nt-err{color:#FF6B6B}

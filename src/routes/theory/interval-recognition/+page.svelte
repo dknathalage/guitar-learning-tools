@@ -5,14 +5,16 @@
   import { NOTES, INTERVALS } from '$lib/constants/music.js';
   import { TonePlayer } from '$lib/audio/TonePlayer.js';
   import { semiToFreq } from '$lib/audio/pitch.js';
-
-  const IR_DIFF = {
-    beginner:     { label: 'Beginner',     intervals: [3, 4, 5, 7, 12], dir: 'asc',  timer: 0,  tip: '5 common intervals \u00b7 Ascending' },
-    intermediate: { label: 'Intermediate', intervals: 'all',            dir: 'asc',  timer: 15, tip: 'All intervals \u00b7 15s' },
-    advanced:     { label: 'Advanced',     intervals: 'all',            dir: 'both', timer: 10, tip: 'Ascending+Descending \u00b7 10s' }
-  };
+  import { LearningEngine } from '$lib/learning/engine.js';
+  import { intervalRecognitionConfig } from '$lib/learning/configs/intervalRecognition.js';
+  import LearningDashboard from '$lib/components/LearningDashboard.svelte';
 
   const tone = new TonePlayer();
+  let qStartTime = 0;
+  let showDash = $state(false);
+
+  let engine = new LearningEngine(intervalRecognitionConfig, 'interval-recognition');
+  let curItem = null;
 
   function irShuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
@@ -24,7 +26,6 @@
 
   // --- Reactive state ---
   let phase = $state('idle');
-  let diff = $state('beginner');
   let score = $state(0);
   let streak = $state(0);
   let best = $state(0);
@@ -52,16 +53,10 @@
   let showStop = $derived(phase !== 'idle');
   let showReset = $derived(score > 0 || attempts > 0);
 
-  // --- Difficulty ---
-  function setDiff(d) {
-    if (phase !== 'idle') return;
-    diff = d;
-  }
-
   // --- Timer ---
   function startTimer() {
     clearTimer();
-    const d = IR_DIFF[diff];
+    const d = engine.getParams();
     if (!d.timer) { timerLeft = 0; return; }
     timerLeft = d.timer;
     timerRef = setInterval(() => {
@@ -83,20 +78,19 @@
 
   // --- Question generation ---
   function genQ() {
-    const d = IR_DIFF[diff];
-    const allowed = d.intervals === 'all' ? INTERVALS : INTERVALS.filter(iv => d.intervals.includes(iv.semi));
-    const intv = allowed[Math.floor(Math.random() * allowed.length)];
+    const d = engine.getParams();
+    curItem = engine.next();
 
-    // Root semitone: -9 to +3 relative to A4 (C4 to Eb4 range)
-    const rootSemi = Math.floor(Math.random() * 13) - 9;
-    const rootFreq = semiToFreq(rootSemi);
-
-    // Direction
-    const asc = d.dir === 'both' ? Math.random() < 0.5 : true;
-    const intervalFreq = semiToFreq(rootSemi + (asc ? intv.semi : -intv.semi));
+    const intv = INTERVALS.find(iv => iv.semi === curItem.intvSemi);
+    const rootFreq = semiToFreq(curItem.rootSemi);
+    const asc = curItem.ascending;
+    const intervalFreq = semiToFreq(curItem.rootSemi + (asc ? intv.semi : -intv.semi));
 
     // Generate 4 choices (1 correct + 3 distractors)
     const correctLabel = intv.name + (d.dir === 'both' ? (asc ? ' \u2191' : ' \u2193') : '');
+    const allowed = Array.isArray(d.intervals)
+      ? INTERVALS.filter(iv => d.intervals.includes(iv.semi))
+      : INTERVALS;
     let pool = allowed.filter(i => i.semi !== intv.semi);
     irShuffle(pool);
     const distractors = pool.slice(0, 3).map(i => i.name + (d.dir === 'both' ? (asc ? ' \u2191' : ' \u2193') : ''));
@@ -134,6 +128,7 @@
     currentRootFreq = q.rootFreq;
     currentIntervalFreq = q.intervalFreq;
     setTimeout(() => playCurrentInterval(), 100);
+    qStartTime = performance.now();
     startTimer();
   }
 
@@ -145,6 +140,7 @@
     if (idx === correctIdx) {
       newStates[idx] = 'correct';
       choiceStates = newStates;
+      engine.report(curItem, true, performance.now() - qStartTime);
       correct++;
       attempts++;
       streak++;
@@ -160,6 +156,7 @@
       newStates[idx] = 'wrong';
       newStates[correctIdx] = 'correct';
       choiceStates = newStates;
+      engine.report(curItem, false, performance.now() - qStartTime);
       streak = 0;
       attempts++;
       const pen = Math.min(score, 5);
@@ -176,6 +173,7 @@
     const newStates = [...choiceStates];
     newStates[correctIdx] = 'correct';
     choiceStates = newStates;
+    engine.report(curItem, false);
     streak = 0;
     attempts++;
     const pen = Math.min(score, 5);
@@ -192,6 +190,7 @@
     const newStates = [...choiceStates];
     newStates[correctIdx] = 'correct';
     choiceStates = newStates;
+    engine.report(curItem, false);
     streak = 0;
     attempts++;
     const pen = Math.min(score, 5);
@@ -207,6 +206,7 @@
   }
 
   function onStop() {
+    engine.save();
     if (score > 0) saveExercise('interval-recognition', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle';
     clearTimer();
@@ -221,6 +221,9 @@
 
   function onReset() {
     onStop();
+    engine.reset();
+    engine = new LearningEngine(intervalRecognitionConfig, 'interval-recognition');
+    curItem = null;
     score = 0;
     streak = 0;
     best = 0;
@@ -230,7 +233,7 @@
     msgErr = false;
   }
 
-  onDestroy(() => { tone.stop(); clearTimer(); });
+  onDestroy(() => { engine.save(); tone.stop(); clearTimer(); });
 </script>
 
 <svelte:head>
@@ -254,11 +257,6 @@
     <div class="nt-stat"><div class="nt-stat-val">{best}</div><div class="nt-stat-lbl">Best</div></div>
   </div>
   <div class="nt-main">
-    <div class="nt-diff">
-      {#each Object.entries(IR_DIFF) as [key, cfg]}
-        <button class="pill{diff === key ? ' on' : ''}" title={cfg.tip} onclick={() => setDiff(key)} disabled={phase !== 'idle'}>{cfg.label}</button>
-      {/each}
-    </div>
     <div class="nt-timer">{timerLeft > 0 ? timerLeft : ''}</div>
     <div class="qz-prompt">{@html promptHtml}</div>
     <div class="qz-extra">{@html extraHtml}</div>
@@ -288,7 +286,11 @@
     {#if showReset}
       <button class="nt-btn" onclick={onReset}>Reset</button>
     {/if}
+    <button class="nt-btn" onclick={() => showDash = !showDash}>{showDash ? 'Hide' : 'Show'} Dashboard</button>
   </div>
+  {#if showDash}
+    <LearningDashboard {engine} onclose={() => showDash = false} />
+  {/if}
 </div>
 
 <style>
@@ -302,7 +304,6 @@
   .nt-stat-val{font-size:20px;font-weight:700;color:var(--ac)}
   .nt-stat-lbl{font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px}
   .nt-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;min-height:0}
-  .nt-diff{display:flex;gap:.4rem;justify-content:center;margin-bottom:.2rem}
   .nt-timer{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:#FF6B6B;text-align:center;min-height:30px}
   .nt-msg{text-align:center;font-size:14px;color:var(--mt);min-height:20px}
   .nt-msg.nt-err{color:#FF6B6B}

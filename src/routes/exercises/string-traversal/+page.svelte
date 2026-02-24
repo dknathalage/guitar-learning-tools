@@ -7,6 +7,10 @@
   import { NT_NATURAL, NT_TUNING, NT_STR_NAMES, BASE_MIDI, noteAt, fretForNote, renderFB } from '$lib/music/fretboard.js';
   import { LearningEngine } from '$lib/learning/engine.js';
   import { stringTraversalConfig } from '$lib/learning/configs/stringTraversal.js';
+  import LearningDashboard from '$lib/components/LearningDashboard.svelte';
+
+  let qStartTime = 0;
+  let showDash = $state(false);
 
   // --- Reactive state ---
   let phase = $state('idle');
@@ -45,7 +49,7 @@
 
   // Audio
   const audio = new AudioManager();
-  let engine = new LearningEngine(stringTraversalConfig);
+  let engine = new LearningEngine(stringTraversalConfig, 'string-traversal');
 
   // --- Derived ---
   let accuracy = $derived(attempts > 0 ? Math.round(correct / attempts * 100) + '%' : '\u2014');
@@ -166,7 +170,7 @@
     travIdx++;
     holdStart = 0;
     if (travIdx >= 6) {
-      engine.report({note: travNote, frets: travFrets}, true);
+      engine.report({note: travNote, frets: travFrets}, true, performance.now() - qStartTime);
       const pts = scoreCorrect(30, 3);
       msgText = `+${pts} points! All strings complete!`;
       msgErr = false;
@@ -210,6 +214,7 @@
     const pick = pickTraversal();
     travNote = pick.note;
     travFrets = pick.frets;
+    qStartTime = performance.now();
     travIdx = 0;
     travDone = [false,false,false,false,false,false];
     fbVisible = false;
@@ -255,6 +260,7 @@
   }
 
   function onStop() {
+    engine.save();
     if (score > 0) saveExercise('string-traversal', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle'; audio.stop(); clearTimer();
     showDetected(null);
@@ -264,7 +270,8 @@
 
   function onReset() {
     onStop();
-    engine = new LearningEngine(stringTraversalConfig);
+    engine.reset();
+    engine = new LearningEngine(stringTraversalConfig, 'string-traversal');
     score = 0; streak = 0; best = 0; correct = 0; attempts = 0;
     travNote = null;
     travFrets = null;
@@ -278,7 +285,7 @@
     msgErr = false;
   }
 
-  onDestroy(() => { audio.stop(); clearTimer(); });
+  onDestroy(() => { engine.save(); audio.stop(); clearTimer(); });
 </script>
 
 <svelte:head>
@@ -358,7 +365,11 @@
     {#if showReset}
       <button class="nt-btn" onclick={onReset}>Reset</button>
     {/if}
+    <button class="nt-btn" onclick={() => showDash = !showDash}>{showDash ? 'Hide' : 'Show'} Dashboard</button>
   </div>
+  {#if showDash}
+    <LearningDashboard {engine} onclose={() => showDash = false} />
+  {/if}
 </div>
 
 <style>

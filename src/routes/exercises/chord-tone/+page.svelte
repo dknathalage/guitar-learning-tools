@@ -5,16 +5,18 @@
   import { NOTES, CHORD_TYPES } from '$lib/constants/music.js';
   import { AudioManager } from '$lib/audio/AudioManager.js';
   import { NT_NATURAL, NT_TUNING, NT_STR_NAMES, BASE_MIDI, noteAt, fretForNote, renderFB, fbDims } from '$lib/music/fretboard.js';
+  import { LearningEngine } from '$lib/learning/engine.js';
+  import { chordToneConfig } from '$lib/learning/configs/chordTone.js';
+  import LearningDashboard from '$lib/components/LearningDashboard.svelte';
 
-  const CT_DIFF = {
-    beginner:    {label:'Beginner',    maxFret:10, naturalsOnly:true,  timer:0,  types:['maj','min'], tones:['R','3','5'], tip:'Maj/Min triads \u00b7 R/3/5 \u00b7 Naturals'},
-    intermediate:{label:'Intermediate',maxFret:12, naturalsOnly:false, timer:0,  types:['maj','min','7','maj7','m7'], tones:['R','3','5','7'], tip:'7th chords \u00b7 All tones'},
-    advanced:    {label:'Advanced',    maxFret:12, naturalsOnly:false, timer:12, types:['maj','min','7','maj7','m7'], tones:['R','3','5','7'], tip:'All chords \u00b7 12s timer'}
-  };
+  let qStartTime = 0;
+  let showDash = $state(false);
+
+  let engine = new LearningEngine(chordToneConfig, 'chord-tone');
+  let curItem = null;
 
   // --- Reactive state ---
   let phase = $state('idle');
-  let diff = $state('beginner');
   let recall = $state(false);
   let score = $state(0);
   let streak = $state(0);
@@ -58,12 +60,6 @@
   let chordName = $derived(challenge ? challenge.root + challenge.chordType.sym : '\u2014');
   let toneLabel = $derived(challenge ? challenge.toneLabel : '');
 
-  // --- Difficulty ---
-  function setDiff(d) {
-    if (phase !== 'idle') return;
-    diff = d;
-  }
-
   // --- Mode ---
   function setMode(r) {
     if (phase !== 'idle') return;
@@ -73,7 +69,7 @@
   // --- Timer ---
   function startTimer() {
     clearTimer();
-    const d = CT_DIFF[diff];
+    const d = engine.getParams();
     if (!d.timer) { timerLeft = 0; return; }
     timerLeft = d.timer;
     timerRef = setInterval(() => {
@@ -123,6 +119,7 @@
     wrongCd = performance.now(); wrongHold = 0;
     msgText = pen > 0 ? '\u2212' + pen + ' points' : 'Wrong!';
     msgErr = true;
+    engine.report(curItem, false);
   }
 
   function checkHold(isCorrect, onConfirm) {
@@ -144,39 +141,9 @@
 
   // --- Challenge picking ---
   function pickChallenge() {
-    const d = CT_DIFF[diff];
-    const allowedTypes = CHORD_TYPES.filter(ct => d.types.includes(ct.id));
-    const ct = allowedTypes[Math.floor(Math.random() * allowedTypes.length)];
-    // Pick a root note
-    const roots = d.naturalsOnly ? NT_NATURAL : NOTES;
-    const root = roots[Math.floor(Math.random() * roots.length)];
-    const ri = NOTES.indexOf(root);
-    // Pick a tone index from allowed tones
-    const toneLabels = d.tones;
-    const toneLbl = toneLabels[Math.floor(Math.random() * toneLabels.length)];
-    // Map tone label to the actual formula entry in the chord type
-    // d.tones uses generic labels: 'R','3','5','7'
-    // ct.fm uses specific labels: 'R','3','5' or 'R','\u266d3','5','\u266d7' etc.
-    let actualIdx = -1;
-    for (let i = 0; i < ct.fm.length; i++) {
-      const f = ct.fm[i];
-      if (f === toneLbl) { actualIdx = i; break; }
-      if (toneLbl === '3' && (f === '3' || f === '\u266d3')) { actualIdx = i; break; }
-      if (toneLbl === '7' && (f === '7' || f === '\u266d7')) { actualIdx = i; break; }
-    }
-    // If chord doesn't have this tone (e.g., triads don't have 7), re-pick
-    if (actualIdx === -1) return pickChallenge();
-    const actualToneLabel = ct.fm[actualIdx];
-    const semi = ct.iv[actualIdx];
-    const targetNote = NOTES[(ri + semi) % 12];
-    // Pick a position on fretboard for display
-    const cands = [];
-    for (let s = 0; s < 6; s++)
-      for (let f = 0; f <= d.maxFret; f++)
-        if (noteAt(s, f) === targetNote) cands.push({note:targetNote, str:s, fret:f, midi:BASE_MIDI[s]+f});
-    if (!cands.length) return pickChallenge();
-    const pos = cands[Math.floor(Math.random() * cands.length)];
-    return { root, chordType: ct, toneLabel: actualToneLabel, targetNote, pos };
+    curItem = engine.next();
+    const ct = CHORD_TYPES.find(c => c.id === curItem.ctId);
+    return { root: curItem.root, chordType: ct, toneLabel: curItem.toneLabel, targetNote: curItem.targetNote, pos: curItem.pos };
   }
 
   // --- Show challenge ---
@@ -204,6 +171,7 @@
     showDetected(note, cents, hz, ok);
 
     checkHold(ok, () => {
+      engine.report(curItem, true, performance.now() - qStartTime);
       const pts = scoreCorrect(10, 2);
       targetDisplay = challenge.targetNote;
       targetHidden = false;
@@ -231,6 +199,7 @@
     showDetected(null);
     challenge = pickChallenge();
     showChallenge();
+    qStartTime = performance.now();
     msgText = 'Listening...';
     msgErr = false;
     startTimer();
@@ -251,6 +220,7 @@
   function onSkip() {
     streak = 0; attempts++;
     score = Math.max(0, score - 5);
+    engine.report(curItem, false);
     clearTimer();
     targetDisplay = challenge.targetNote;
     targetHidden = false;
@@ -263,6 +233,7 @@
   function onTimeout() {
     streak = 0; attempts++;
     score = Math.max(0, score - 5);
+    engine.report(curItem, false);
     targetDisplay = challenge.targetNote;
     targetHidden = false;
     fbHtml = renderFB(challenge.pos, null, false);
@@ -272,6 +243,7 @@
   }
 
   function onStop() {
+    engine.save();
     if (score > 0) saveExercise('chord-tone', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle'; audio.stop(); clearTimer();
     showDetected(null);
@@ -283,12 +255,15 @@
     onStop();
     score = 0; streak = 0; best = 0; correct = 0; attempts = 0;
     challenge = null;
+    engine.reset();
+    engine = new LearningEngine(chordToneConfig, 'chord-tone');
+    curItem = null;
     showChallenge();
     msgText = 'Press Start to begin';
     msgErr = false;
   }
 
-  onDestroy(() => { audio.stop(); clearTimer(); });
+  onDestroy(() => { engine.save(); audio.stop(); clearTimer(); });
 </script>
 
 <svelte:head>
@@ -314,12 +289,6 @@
   </div>
 
   <div class="nt-main">
-    <div class="nt-diff">
-      {#each Object.entries(CT_DIFF) as [key, cfg]}
-        <button class="pill{diff === key ? ' on' : ''}" title={cfg.tip} onclick={() => setDiff(key)} disabled={phase !== 'idle'}>{cfg.label}</button>
-      {/each}
-    </div>
-
     <div class="nt-mode">
       <button class="pill{recall ? '' : ' on'}" title="Shows target note & fretboard" onclick={() => setMode(false)} disabled={phase !== 'idle'}>Guided</button>
       <button class="pill{recall ? ' on' : ''}" title="Hides target — you recall it" onclick={() => setMode(true)} disabled={phase !== 'idle'}>Recall</button>
@@ -362,7 +331,11 @@
     {#if showReset}
       <button class="nt-btn" onclick={onReset}>Reset</button>
     {/if}
+    <button class="nt-btn" onclick={() => showDash = !showDash}>{showDash ? 'Hide' : 'Show'} Dashboard</button>
   </div>
+  {#if showDash}
+    <LearningDashboard {engine} onclose={() => showDash = false} />
+  {/if}
 </div>
 
 <style>
@@ -393,7 +366,6 @@
   .nt-btn:hover{border-color:#555;color:var(--tx)}
   .nt-btn.nt-primary{border-color:var(--ac);color:var(--ac);background:rgba(88,166,255,.1)}
   .nt-btn.nt-danger{border-color:#FF6B6B;color:#FF6B6B;background:rgba(255,107,107,.08)}
-  .nt-diff{display:flex;gap:.4rem;justify-content:center;margin-bottom:.2rem}
   .nt-mode{display:flex;gap:.4rem;justify-content:center;margin-bottom:.2rem}
   .nt-timer{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:#FF6B6B;text-align:center;min-height:30px}
   .nt-msg{text-align:center;font-size:14px;color:var(--mt);min-height:20px}

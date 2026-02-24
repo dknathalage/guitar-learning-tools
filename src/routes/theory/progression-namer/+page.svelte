@@ -2,22 +2,15 @@
   import { base } from '$app/paths';
   import { saveExercise } from '$lib/progress.js';
   import { NOTES } from '$lib/constants/music.js';
+  import { LearningEngine } from '$lib/learning/engine.js';
+  import { progressionNamerConfig, PROG_3, PROG_4, MAJOR_IV, MINOR_IV, MAJOR_Q, MINOR_Q, MAJOR_RN, MINOR_RN } from '$lib/learning/configs/progressionNamer.js';
+  import LearningDashboard from '$lib/components/LearningDashboard.svelte';
 
-  const MAJOR_IV = [0,2,4,5,7,9,11];
-  const MINOR_IV = [0,2,3,5,7,8,10];
-  const MAJOR_Q  = ['','m','m','','','m','dim'];
-  const MINOR_Q  = ['m','dim','','m','m','',''];
-  const MAJOR_RN = ['I','ii','iii','IV','V','vi','vii\u00b0'];
-  const MINOR_RN = ['i','ii\u00b0','III','iv','v','VI','VII'];
+  let qStartTime = 0;
+  let showDash = $state(false);
 
-  const PROG_3 = [[0,3,4],[0,4,3],[0,3,0],[0,4,0],[0,5,3],[0,5,4]];
-  const PROG_4 = [[0,4,5,3],[0,5,3,4],[0,3,4,3],[0,3,0,4],[0,4,3,0],[0,3,4,0],[4,3,5,0],[0,0,3,4]];
-
-  const PN_DIFF = {
-    beginner:     { label: 'Beginner',     scales: ['major'],               progLen: 3, timer: 0,  tip: '3-chord, major keys' },
-    intermediate: { label: 'Intermediate', scales: ['major','natural_min'], progLen: 4, timer: 15, tip: '4-chord, major+minor \u00b7 15s' },
-    advanced:     { label: 'Advanced',     scales: ['major','natural_min'], progLen: 4, timer: 10, tip: '4-chord, all types \u00b7 10s' }
-  };
+  let engine = new LearningEngine(progressionNamerConfig, 'progression-namer');
+  let curItem = null;
 
   function pnShuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
@@ -41,7 +34,6 @@
 
   // --- Reactive state ---
   let phase = $state('idle');
-  let diff = $state('beginner');
   let score = $state(0);
   let streak = $state(0);
   let best = $state(0);
@@ -66,16 +58,10 @@
   let showStop = $derived(phase !== 'idle');
   let showReset = $derived(score > 0 || attempts > 0);
 
-  // --- Difficulty ---
-  function setDiff(d) {
-    if (phase !== 'idle') return;
-    diff = d;
-  }
-
   // --- Timer ---
   function startTimer() {
     clearTimer();
-    const d = PN_DIFF[diff];
+    const d = engine.getParams();
     if (!d.timer) { timerLeft = 0; return; }
     timerLeft = d.timer;
     timerRef = setInterval(() => {
@@ -91,25 +77,28 @@
 
   // --- Question generation ---
   function genQ() {
-    const d = PN_DIFF[diff];
-    const scaleType = d.scales[Math.floor(Math.random() * d.scales.length)];
+    const d = engine.getParams();
+    curItem = engine.next();
+
+    const scaleType = curItem.scaleType;
     const isMajor = scaleType === 'major';
     const scaleIv = isMajor ? MAJOR_IV : MINOR_IV;
     const qualities = isMajor ? MAJOR_Q : MINOR_Q;
     const numerals = isMajor ? MAJOR_RN : MINOR_RN;
     const scaleLabel = isMajor ? 'major' : 'minor';
 
-    const rootIdx = Math.floor(Math.random() * 12);
+    const rootIdx = curItem.rootIdx;
     const rootName = NOTES[rootIdx];
 
     const pool = d.progLen === 3 ? PROG_3 : PROG_4;
-    const degrees = pool[Math.floor(Math.random() * pool.length)];
+    const localIdx = d.progLen === 3 ? curItem.progIdx : curItem.progIdx - PROG_3.length;
+    const degrees = pool[localIdx];
 
     const correctChords = buildProgChords(rootIdx, scaleIv, qualities, degrees);
     const correctNumerals = buildProgNumerals(numerals, degrees);
     const keyLabel = `${rootName} ${scaleLabel}`;
 
-    const mode = Math.random() < 0.5 ? 'name' : 'chords';
+    const mode = curItem.mode;
 
     if (mode === 'name') {
       // Given chords, name the numerals
@@ -195,6 +184,7 @@
     answered = false;
     msgText = '';
     msgErr = false;
+    qStartTime = performance.now();
     startTimer();
   }
 
@@ -206,6 +196,7 @@
     if (idx === correctIdx) {
       newStates[idx] = 'correct';
       choiceStates = newStates;
+      engine.report(curItem, true, performance.now() - qStartTime);
       correct++;
       attempts++;
       streak++;
@@ -221,6 +212,7 @@
       newStates[idx] = 'wrong';
       newStates[correctIdx] = 'correct';
       choiceStates = newStates;
+      engine.report(curItem, false, performance.now() - qStartTime);
       streak = 0;
       attempts++;
       const pen = Math.min(score, 5);
@@ -237,6 +229,7 @@
     const newStates = [...choiceStates];
     newStates[correctIdx] = 'correct';
     choiceStates = newStates;
+    engine.report(curItem, false);
     streak = 0;
     attempts++;
     const pen = Math.min(score, 5);
@@ -253,6 +246,7 @@
     const newStates = [...choiceStates];
     newStates[correctIdx] = 'correct';
     choiceStates = newStates;
+    engine.report(curItem, false);
     streak = 0;
     attempts++;
     const pen = Math.min(score, 5);
@@ -268,6 +262,7 @@
   }
 
   function onStop() {
+    engine.save();
     if (score > 0) saveExercise('progression-namer', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle';
     clearTimer();
@@ -281,6 +276,9 @@
 
   function onReset() {
     onStop();
+    engine.reset();
+    engine = new LearningEngine(progressionNamerConfig, 'progression-namer');
+    curItem = null;
     score = 0;
     streak = 0;
     best = 0;
@@ -312,11 +310,6 @@
     <div class="nt-stat"><div class="nt-stat-val">{best}</div><div class="nt-stat-lbl">Best</div></div>
   </div>
   <div class="nt-main">
-    <div class="nt-diff">
-      {#each Object.entries(PN_DIFF) as [key, cfg]}
-        <button class="pill{diff === key ? ' on' : ''}" title={cfg.tip} onclick={() => setDiff(key)} disabled={phase !== 'idle'}>{cfg.label}</button>
-      {/each}
-    </div>
     <div class="nt-timer">{timerLeft > 0 ? timerLeft : ''}</div>
     <div class="qz-prompt">{@html promptHtml}</div>
     <div class="qz-extra">{@html extraHtml}</div>
@@ -343,7 +336,11 @@
     {#if showReset}
       <button class="nt-btn" onclick={onReset}>Reset</button>
     {/if}
+    <button class="nt-btn" onclick={() => showDash = !showDash}>{showDash ? 'Hide' : 'Show'} Dashboard</button>
   </div>
+  {#if showDash}
+    <LearningDashboard {engine} onclose={() => showDash = false} />
+  {/if}
 </div>
 
 <style>
@@ -358,7 +355,6 @@
   .nt-stat-val{font-size:20px;font-weight:700;color:var(--ac)}
   .nt-stat-lbl{font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px}
   .nt-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;min-height:0}
-  .nt-diff{display:flex;gap:.4rem;justify-content:center;margin-bottom:.2rem}
   .nt-timer{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:#FF6B6B;text-align:center;min-height:30px}
   .nt-msg{text-align:center;font-size:14px;color:var(--mt);min-height:20px}
   .nt-msg.nt-err{color:#FF6B6B}

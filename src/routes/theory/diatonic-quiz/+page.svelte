@@ -2,23 +2,25 @@
   import { base } from '$app/paths';
   import { saveExercise } from '$lib/progress.js';
   import { NOTES } from '$lib/constants/music.js';
+  import { LearningEngine } from '$lib/learning/engine.js';
+  import { diatonicQuizConfig } from '$lib/learning/configs/diatonicQuiz.js';
+  import LearningDashboard from '$lib/components/LearningDashboard.svelte';
+
+  let qStartTime = 0;
+  let showDash = $state(false);
 
   // --- Scale & diatonic data ---
   const MAJOR_IV = [0,2,4,5,7,9,11];
   const MINOR_IV = [0,2,3,5,7,8,10];
   const MAJ_TRIAD_Q = ['','m','m','','','m','dim'];
   const MIN_TRIAD_Q = ['m','dim','','m','m','',''];
-  const MAJ_7TH_Q = ['maj7','m7','m7','maj7','7','m7','m7\u266d5'];
-  const MIN_7TH_Q = ['m7','m7\u266d5','maj7','m7','m7','maj7','7'];
-  const MAJ_ROM = ['I','ii','iii','IV','V','vi','vii\u00b0'];
-  const MIN_ROM = ['i','ii\u00b0','III','iv','v','VI','VII'];
+  const MAJ_7TH_Q = ['maj7','m7','m7','maj7','7','m7','m7♭5'];
+  const MIN_7TH_Q = ['m7','m7♭5','maj7','m7','m7','maj7','7'];
+  const MAJ_ROM = ['I','ii','iii','IV','V','vi','vii°'];
+  const MIN_ROM = ['i','ii°','III','iv','v','VI','VII'];
 
-  // difficulty config
-  const DQ_DIFF = {
-    beginner:     { label: 'Beginner',     scales: ['major'],                  use7ths: false, timer: 0,  tip: 'Major keys, triads' },
-    intermediate: { label: 'Intermediate', scales: ['major', 'natural_min'],   use7ths: true,  timer: 15, tip: 'Major + Minor, 7ths \u00b7 15s' },
-    advanced:     { label: 'Advanced',     scales: ['major', 'natural_min'],   use7ths: true,  timer: 8,  tip: 'All types \u00b7 8s' }
-  };
+  let engine = new LearningEngine(diatonicQuizConfig, 'diatonic-quiz');
+  let curItem = null;
 
   function dqShuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
@@ -50,7 +52,6 @@
 
   // --- Reactive state ---
   let phase = $state('idle');
-  let diff = $state('beginner');
   let score = $state(0);
   let streak = $state(0);
   let best = $state(0);
@@ -69,22 +70,16 @@
   let msgErr = $state(false);
 
   // --- Derived ---
-  let accuracy = $derived(attempts > 0 ? Math.round(correct / attempts * 100) + '%' : '\u2014');
+  let accuracy = $derived(attempts > 0 ? Math.round(correct / attempts * 100) + '%' : '—');
   let showStart = $derived(phase === 'idle');
   let showSkip = $derived(phase !== 'idle');
   let showStop = $derived(phase !== 'idle');
   let showReset = $derived(score > 0 || attempts > 0);
 
-  // --- Difficulty ---
-  function setDiff(d) {
-    if (phase !== 'idle') return;
-    diff = d;
-  }
-
   // --- Timer ---
   function startTimer() {
     clearTimer();
-    const d = DQ_DIFF[diff];
+    const d = engine.getParams();
     if (!d.timer) { timerLeft = 0; return; }
     timerLeft = d.timer;
     timerRef = setInterval(() => {
@@ -100,14 +95,12 @@
 
   // --- Question generation ---
   function genQ() {
-    const d = DQ_DIFF[diff];
-    const scaleType = d.scales[Math.floor(Math.random() * d.scales.length)];
-    const rootIdx = Math.floor(Math.random() * 12);
+    const d = engine.getParams();
+    curItem = engine.next();
+    const { rootIdx, scaleType, degree, mode } = curItem;
     const rootNote = NOTES[rootIdx];
-    const degree = Math.floor(Math.random() * 7);
-    const mode = Math.random() < 0.5 ? 'degree_to_chord' : 'chord_to_numeral';
 
-    if (mode === 'degree_to_chord') {
+    if (mode === 'd2c') {
       // "What is the IV chord in G major?" -> answer is a chord name
       const rom = romanNumeral(degree, scaleType);
       const correctChord = diatonicChord(rootIdx, degree, scaleType, d.use7ths);
@@ -171,6 +164,7 @@
     answered = false;
     msgText = '';
     msgErr = false;
+    qStartTime = performance.now();
     startTimer();
   }
 
@@ -192,6 +186,7 @@
       score += pts;
       msgText = `+${pts} points!`;
       msgErr = false;
+      engine.report(curItem, true, performance.now() - qStartTime);
       setTimeout(() => { if (phase === 'active') nextQ(); }, 800);
     } else {
       newStates[idx] = 'wrong';
@@ -203,6 +198,7 @@
       score -= pen;
       msgText = pen > 0 ? '\u2212' + pen + ' points' : 'Wrong!';
       msgErr = true;
+      engine.report(curItem, false, performance.now() - qStartTime);
       setTimeout(() => { if (phase === 'active') nextQ(); }, 1200);
     }
   }
@@ -219,6 +215,7 @@
     score -= pen;
     msgText = `Time\u2019s up!` + (pen > 0 ? ` \u2212${pen}` : '');
     msgErr = true;
+    engine.report(curItem, false);
     setTimeout(() => { if (phase === 'active') nextQ(); }, 1500);
   }
 
@@ -235,6 +232,7 @@
     score -= pen;
     msgText = 'Skipped.' + (pen > 0 ? ` \u2212${pen}` : '');
     msgErr = true;
+    engine.report(curItem, false);
     setTimeout(() => { if (phase === 'active') nextQ(); }, 1200);
   }
 
@@ -244,6 +242,7 @@
   }
 
   function onStop() {
+    engine.save();
     if (score > 0) saveExercise('diatonic-quiz', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle';
     clearTimer();
@@ -257,6 +256,9 @@
 
   function onReset() {
     onStop();
+    engine.reset();
+    engine = new LearningEngine(diatonicQuizConfig, 'diatonic-quiz');
+    curItem = null;
     score = 0;
     streak = 0;
     best = 0;
@@ -288,11 +290,6 @@
     <div class="nt-stat"><div class="nt-stat-val">{best}</div><div class="nt-stat-lbl">Best</div></div>
   </div>
   <div class="nt-main">
-    <div class="nt-diff">
-      {#each Object.entries(DQ_DIFF) as [key, cfg]}
-        <button class="pill{diff === key ? ' on' : ''}" title={cfg.tip} onclick={() => setDiff(key)} disabled={phase !== 'idle'}>{cfg.label}</button>
-      {/each}
-    </div>
     <div class="nt-timer">{timerLeft > 0 ? timerLeft : ''}</div>
     <div class="qz-prompt">{@html promptHtml}</div>
     <div class="qz-extra">{@html extraHtml}</div>
@@ -319,7 +316,11 @@
     {#if showReset}
       <button class="nt-btn" onclick={onReset}>Reset</button>
     {/if}
+    <button class="nt-btn" onclick={() => showDash = !showDash}>{showDash ? 'Hide' : 'Show'} Dashboard</button>
   </div>
+  {#if showDash}
+    <LearningDashboard {engine} onclose={() => showDash = false} />
+  {/if}
 </div>
 
 <style>
@@ -334,7 +335,6 @@
   .nt-stat-val{font-size:20px;font-weight:700;color:var(--ac)}
   .nt-stat-lbl{font-size:11px;color:var(--mt);text-transform:uppercase;letter-spacing:.5px}
   .nt-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.8rem;min-height:0}
-  .nt-diff{display:flex;gap:.4rem;justify-content:center;margin-bottom:.2rem}
   .nt-timer{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:#FF6B6B;text-align:center;min-height:30px}
   .nt-msg{text-align:center;font-size:14px;color:var(--mt);min-height:20px}
   .nt-msg.nt-err{color:#FF6B6B}

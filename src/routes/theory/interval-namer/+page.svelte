@@ -5,6 +5,10 @@
   import { NT_NATURAL } from '$lib/music/fretboard.js';
   import { LearningEngine } from '$lib/learning/engine.js';
   import { intervalNamerConfig } from '$lib/learning/configs/intervalNamer.js';
+  import LearningDashboard from '$lib/components/LearningDashboard.svelte';
+
+  let qStartTime = 0;
+  let showDash = $state(false);
 
   function inShuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
@@ -33,7 +37,7 @@
   let msgText = $state('Press Start to begin');
   let msgErr = $state(false);
 
-  let engine = new LearningEngine(intervalNamerConfig);
+  let engine = new LearningEngine(intervalNamerConfig, 'interval-namer');
   let curItem = null;
 
   // --- Derived ---
@@ -103,6 +107,7 @@
   // --- Flow ---
   function nextQ() {
     phase = 'active';
+    qStartTime = performance.now();
     const q = genQ();
     correctIdx = q.correctIdx;
     promptHtml = q.prompt;
@@ -123,7 +128,7 @@
     if (idx === correctIdx) {
       newStates[idx] = 'correct';
       choiceStates = newStates;
-      engine.report(curItem, true);
+      engine.report(curItem, true, performance.now() - qStartTime);
       correct++;
       attempts++;
       streak++;
@@ -139,7 +144,7 @@
       newStates[idx] = 'wrong';
       newStates[correctIdx] = 'correct';
       choiceStates = newStates;
-      engine.report(curItem, false);
+      engine.report(curItem, false, performance.now() - qStartTime);
       streak = 0;
       attempts++;
       const pen = Math.min(score, 5);
@@ -189,6 +194,7 @@
   }
 
   function onStop() {
+    engine.save();
     if (score > 0) saveExercise('interval-namer', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle';
     clearTimer();
@@ -207,11 +213,15 @@
     best = 0;
     correct = 0;
     attempts = 0;
-    engine = new LearningEngine(intervalNamerConfig);
+    engine.reset();
+    engine = new LearningEngine(intervalNamerConfig, 'interval-namer');
     curItem = null;
     msgText = 'Press Start to begin';
     msgErr = false;
   }
+
+  import { onDestroy } from 'svelte';
+  onDestroy(() => { engine.save(); clearTimer(); });
 </script>
 
 <svelte:head>
@@ -261,7 +271,11 @@
     {#if showReset}
       <button class="nt-btn" onclick={onReset}>Reset</button>
     {/if}
+    <button class="nt-btn" onclick={() => showDash = !showDash}>{showDash ? 'Hide' : 'Show'} Dashboard</button>
   </div>
+  {#if showDash}
+    <LearningDashboard {engine} onclose={() => showDash = false} />
+  {/if}
 </div>
 
 <style>

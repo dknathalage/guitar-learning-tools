@@ -6,16 +6,17 @@
   import { AudioManager } from '$lib/audio/AudioManager.js';
   import { NT_STR_NAMES, BASE_MIDI, noteAt } from '$lib/music/fretboard.js';
   import { CFG, STD_SHAPES, adaptShape, getBf, resolve, renderDiagram, STD_COLORS } from '$lib/music/chords.js';
+  import { LearningEngine } from '$lib/learning/engine.js';
+  import { chordPlayerConfig } from '$lib/learning/configs/chordPlayer.js';
+  import LearningDashboard from '$lib/components/LearningDashboard.svelte';
 
-  const CP_DIFF = {
-    beginner:    {label:'Beginner',    shapes:['e','a','d'], types:['maj','min'],                    timer:0,  tip:'E/A/D shapes \u00b7 Maj/Min'},
-    intermediate:{label:'Intermediate',shapes:['e','a','d','c','g'], types:['maj','min','7','maj7','m7'], timer:0,  tip:'All CAGED \u00b7 +7th chords'},
-    advanced:    {label:'Advanced',    shapes:['e','a','d','c','g'], types:['maj','min','7','maj7','m7'], timer:30, tip:'All shapes/types \u00b7 30s timer'}
-  };
+  let qStartTime = 0;
+  let showDash = $state(false);
 
   // --- Reactive state ---
+  let engine = new LearningEngine(chordPlayerConfig, 'chord-player');
+  let curItem = null;
   let phase = $state('idle');
-  let diff = $state('beginner');
   let score = $state(0);
   let streak = $state(0);
   let best = $state(0);
@@ -55,16 +56,10 @@
   let showActive = $derived(phase !== 'idle');
   let showReset = $derived(score > 0 || attempts > 0);
 
-  // --- Difficulty ---
-  function setDiff(d) {
-    if (phase !== 'idle') return;
-    diff = d;
-  }
-
   // --- Timer ---
   function startTimer() {
     clearTimer();
-    const d = CP_DIFF[diff];
+    const d = engine.getParams();
     if (!d.timer) { timerLeft = 0; return; }
     timerLeft = d.timer;
     timerRef = setInterval(() => {
@@ -135,15 +130,13 @@
 
   // --- Challenge picking ---
   function pickChallenge() {
-    const d = CP_DIFF[diff];
-    const allowedShapes = STD_SHAPES.filter(s => d.shapes.includes(s.id));
-    const sh = allowedShapes[Math.floor(Math.random() * allowedShapes.length)];
-    const allowedTypes = CFG.chordTypes.filter(ct => d.types.includes(ct.id));
-    const ct = allowedTypes[Math.floor(Math.random() * allowedTypes.length)];
-    const ri = Math.floor(Math.random() * 12);
-    const root = NOTES[ri];
+    curItem = engine.next();
+    const { shapeId, typeId, rootIdx } = curItem;
+    const sh = STD_SHAPES.find(s => s.id === shapeId);
+    const ct = CFG.chordTypes.find(c => c.id === typeId);
+    const root = NOTES[rootIdx];
     const adapted = adaptShape(sh);
-    const r = resolve(adapted, ri, ct.iv);
+    const r = resolve(adapted, rootIdx, ct.iv);
     // Need at least 3 voices
     if (r.voices.length < 3) return pickChallenge();
     // Sort voices low string to high (low string = 0)
@@ -163,6 +156,7 @@
     voiceIdx++;
     holdStart = 0;
     if (voiceIdx >= challenge.sortedVoices.length) {
+      engine.report(curItem, true, performance.now() - qStartTime);
       const pts = scoreCorrect(30, 3);
       msgText = `+${pts} points! All voices complete!`;
       msgErr = false;
@@ -206,6 +200,7 @@
   function nextChallenge() {
     holdStart = 0; phase = 'listening';
     showDetected(null);
+    qStartTime = performance.now();
     const pick = pickChallenge();
     challenge = pick;
     voiceIdx = 0;
@@ -232,6 +227,7 @@
   }
 
   function onSkip() {
+    engine.report(curItem, false);
     streak = 0; attempts++;
     score = Math.max(0, score - 10);
     clearTimer();
@@ -241,6 +237,7 @@
   }
 
   function onTimeout() {
+    engine.report(curItem, false);
     streak = 0; attempts++;
     score = Math.max(0, score - 10);
     msgText = "Time's up!";
@@ -249,6 +246,7 @@
   }
 
   function onStop() {
+    engine.save();
     if (score > 0) saveExercise('chord-player', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
     phase = 'idle'; audio.stop(); clearTimer();
     showDetected(null);
@@ -258,6 +256,9 @@
 
   function onReset() {
     onStop();
+    engine.reset();
+    engine = new LearningEngine(chordPlayerConfig, 'chord-player');
+    curItem = null;
     score = 0; streak = 0; best = 0; correct = 0; attempts = 0;
     challenge = null;
     voiceIdx = 0;
@@ -269,7 +270,7 @@
     msgErr = false;
   }
 
-  onDestroy(() => { audio.stop(); clearTimer(); });
+  onDestroy(() => { engine.save(); audio.stop(); clearTimer(); });
 </script>
 
 <svelte:head>
@@ -295,12 +296,6 @@
   </div>
 
   <div class="nt-main">
-    <div class="nt-diff">
-      {#each Object.entries(CP_DIFF) as [key, cfg]}
-        <button class="pill{diff === key ? ' on' : ''}" title={cfg.tip} onclick={() => setDiff(key)} disabled={phase !== 'idle'}>{cfg.label}</button>
-      {/each}
-    </div>
-
     <div class="nt-timer">{timerLeft > 0 ? timerLeft : ''}</div>
 
     <div class="nt-chord-section">
@@ -346,7 +341,11 @@
     {#if showReset}
       <button class="nt-btn" onclick={onReset}>Reset</button>
     {/if}
+    <button class="nt-btn" onclick={() => showDash = !showDash}>{showDash ? 'Hide' : 'Show'} Dashboard</button>
   </div>
+  {#if showDash}
+    <LearningDashboard {engine} onclose={() => showDash = false} />
+  {/if}
 </div>
 
 <style>
@@ -377,7 +376,6 @@
   .nt-btn:hover{border-color:#555;color:var(--tx)}
   .nt-btn.nt-primary{border-color:var(--ac);color:var(--ac);background:rgba(88,166,255,.1)}
   .nt-btn.nt-danger{border-color:#FF6B6B;color:#FF6B6B;background:rgba(255,107,107,.08)}
-  .nt-diff{display:flex;gap:.4rem;justify-content:center;margin-bottom:.2rem}
   .nt-timer{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:#FF6B6B;text-align:center;min-height:30px}
   .nt-msg{text-align:center;font-size:14px;color:var(--mt);min-height:20px}
   .nt-msg.nt-err{color:#FF6B6B}
