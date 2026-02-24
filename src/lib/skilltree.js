@@ -9,12 +9,12 @@ export const CHAPTERS = [
       'Understanding fretboard geometry enables playing in any position'
     ],
     hints: [
-      'Start with natural notes on strings 5+6 — these are root notes for barre chords.',
-      'Aim for 80%+ on Fretboard Quiz before moving on.'
+      'Start with natural notes on strings 5+6 \u2014 these are root notes for barre chords.',
+      'Aim for 80%+ on Note Find before moving on.'
     ],
     exercises: [
+      { id: 'note-quiz',         name: 'Note Quiz',         path: '/exercises/note-quiz',         mic: false },
       { id: 'note-find',         name: 'Note Find',         path: '/exercises/note-find',         mic: true },
-      { id: 'fretboard-quiz',    name: 'Fretboard Quiz',    path: '/theory/fretboard-quiz',       mic: false },
       { id: 'string-traversal',  name: 'String Traversal',  path: '/exercises/string-traversal',  mic: true }
     ]
   },
@@ -28,13 +28,11 @@ export const CHAPTERS = [
       'Every chord, scale, and melody is built from interval stacking'
     ],
     hints: [
-      'Sing each interval as you play it — train your ear, not just your fingers.',
-      'Learn minor 3rd vs major 3rd first — they define major vs minor.'
+      'Sing each interval as you play it \u2014 train your ear, not just your fingers.',
+      'Learn minor 3rd vs major 3rd first \u2014 they define major vs minor.'
     ],
     exercises: [
-      { id: 'interval-trainer',     name: 'Interval Trainer',     path: '/exercises/interval',           mic: true },
-      { id: 'interval-namer',       name: 'Interval Namer',       path: '/theory/interval-namer',        mic: false },
-      { id: 'interval-recognition', name: 'Interval Recognition', path: '/theory/interval-recognition',  mic: false }
+      { id: 'interval-trainer', name: 'Interval Trainer', path: '/exercises/interval', mic: true }
     ]
   },
   {
@@ -47,13 +45,11 @@ export const CHAPTERS = [
       'The 3rd determines major vs minor \u2014 one semitone difference'
     ],
     hints: [
-      'Every chord is a formula — know the formula, build it anywhere.',
-      'Start with Chord Speller, then Chord Tone Find with your guitar.'
+      'Every chord is a formula \u2014 know the formula, build it anywhere.',
+      'Use Chord Tone Find to hear individual tones within chords.'
     ],
     exercises: [
-      { id: 'chord-speller',  name: 'Chord Speller',    path: '/theory/chord-speller',       mic: false },
-      { id: 'chord-tone',     name: 'Chord Tone Find',  path: '/exercises/chord-tone',       mic: true },
-      { id: 'chord-quality',  name: 'Chord Quality',    path: '/theory/chord-quality',       mic: false }
+      { id: 'chord-tone', name: 'Chord Tone Find', path: '/exercises/chord-tone', mic: true }
     ]
   },
   {
@@ -66,12 +62,12 @@ export const CHAPTERS = [
       'Any chord root has 5 positions across the neck using CAGED'
     ],
     hints: [
-      'Learn E and A shapes first — most common barre forms.',
+      'Learn E and A shapes first \u2014 most common barre forms.',
       'Use the Visualizer to see how shapes connect across the neck.'
     ],
     exercises: [
-      { id: 'caged-visualizer', name: 'CAGED Visualizer', path: '/caged',                       mic: false },
-      { id: 'chord-player',     name: 'Chord Player',     path: '/exercises/chord-player',      mic: true }
+      { id: 'caged-visualizer', name: 'CAGED Visualizer', path: '/caged',                  mic: false },
+      { id: 'chord-player',     name: 'Chord Player',     path: '/exercises/chord-player',  mic: true }
     ]
   },
   {
@@ -84,70 +80,13 @@ export const CHAPTERS = [
       'Seven modes from rotating the major scale across root notes'
     ],
     hints: [
-      'Play scales slowly with a metronome — speed comes from accuracy.',
+      'Play scales slowly with a metronome \u2014 speed comes from accuracy.',
       'Connect scale patterns to CAGED shapes you already know.'
     ],
     exercises: [
       { id: 'scale-runner',  name: 'Scale Runner',  path: '/exercises/scale-runner',   mic: true },
       { id: 'mode-trainer',  name: 'Mode Trainer',  path: '/exercises/mode-trainer',   mic: true }
     ]
-  },
-  {
-    id: 6, title: 'Harmony', color: '#FB923C', docsPath: 'docs/ch6-harmony.md',
-    deps: [5],
-    theory: [
-      'Diatonic chords: harmonize each scale degree by stacking 3rds',
-      'Key of C: I-ii-iii-IV-V-vi-vii\u00b0 (C-Dm-Em-F-G-Am-Bdim)',
-      'Roman numerals show chord functions: tonic, subdominant, dominant',
-      'Same progressions appear across pop, rock, folk, and classical'
-    ],
-    hints: [
-      'Memorize the pattern: maj-min-min-maj-maj-min-dim.',
-      'Listen for I-V-vi-IV in pop songs — it\'s everywhere.'
-    ],
-    exercises: [
-      { id: 'diatonic-quiz',     name: 'Diatonic Quiz',     path: '/theory/diatonic-quiz',     mic: false },
-      { id: 'progression-namer', name: 'Progression Namer', path: '/theory/progression-namer', mic: false }
-    ]
-  },
-  {
-    id: 7, title: 'Rhythm', color: '#A78BFA', docsPath: 'docs/ch7-rhythm.md',
-    deps: [],
-    theory: [
-      'Pulse, beat (4 per measure in 4/4), and tempo (BPM) are foundational',
-      'Note values subdivide: whole, half, quarter, eighth, sixteenth',
-      'Counting: 1-2-3-4 (quarters), 1&2&3&4& (eighths), triplets',
-      'Rhythm is the neglected dimension self-taught guitarists must internalize'
-    ],
-    hints: [
-      'Practice Rhythm Tap without guitar first — isolate timing.',
-      'Count out loud while tapping — it builds internal rhythm.'
-    ],
-    exercises: [
-      { id: 'rhythm-tap', name: 'Rhythm Tap', path: '/exercises/rhythm-tap', mic: false }
-    ]
-  },
-  {
-    id: 8, title: 'Application', color: '#34D399', docsPath: 'docs/ch8-application.md',
-    deps: [6, 7],
-    theory: [
-      'Analyze songs: identify key, use Roman numerals, spot patterns',
-      'Improvisation: pentatonic boxes \u2192 chord tone targeting \u2192 full scales',
-      'Transpose progressions across keys to deepen understanding',
-      'Combines fretboard, intervals, chords, harmony, and rhythm'
-    ],
-    exercises: []
-  },
-  {
-    id: 9, title: 'Advanced', color: '#F87171', docsPath: 'docs/ch9-advanced.md',
-    deps: [8],
-    theory: [
-      'Tritone substitution: replace dom7 with dom7 a tritone away',
-      'Chord substitutions maintain function while adding harmonic color',
-      'Relative major/minor substitution for smoother voice leading',
-      'Tools for breaking out of diatonic harmony and basic patterns'
-    ],
-    exercises: []
   }
 ];
 
@@ -155,11 +94,7 @@ export const EDGES = [
   { from: 1, to: 2 },
   { from: 2, to: 3 },
   { from: 3, to: 4 },
-  { from: 4, to: 5 },
-  { from: 5, to: 6 },
-  { from: 6, to: 8 },
-  { from: 7, to: 8 },
-  { from: 8, to: 9 }
+  { from: 4, to: 5 }
 ];
 
 export function renderRing(pct, color, size = 64) {

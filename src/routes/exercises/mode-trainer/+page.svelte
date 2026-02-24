@@ -10,7 +10,6 @@
   import LearningDashboard from '$lib/components/LearningDashboard.svelte';
 
   let qStartTime = 0;
-  let showDash = $state(false);
 
   let engine = new LearningEngine(modeTrainerConfig, 'mode-trainer');
   let curItem = null;
@@ -46,6 +45,7 @@
   let holdStart = 0;
   let wrongHold = 0;
   let wrongCd = 0;
+  let lastDetected = '';
 
   // Audio
   const audio = new AudioManager();
@@ -206,6 +206,7 @@
 
   // --- Detection ---
   function onDetect(note, cents, hz, semi) {
+    lastDetected = note || '';
     if (!challenge || phase !== 'listening') return;
     const target = challenge.seq[noteIdx];
     const nm = note === target.note;
@@ -251,7 +252,7 @@
   }
 
   function onSkip() {
-    if (curItem) engine.report(curItem, false);
+    if (curItem) engine.report(curItem, false, undefined, { detected: lastDetected });
     streak = 0; attempts++;
     score = Math.max(0, score - 10);
     clearTimer();
@@ -265,7 +266,7 @@
   }
 
   function onTimeout() {
-    if (curItem) engine.report(curItem, false);
+    if (curItem) engine.report(curItem, false, undefined, { detected: lastDetected });
     streak = 0; attempts++;
     score = Math.max(0, score - 10);
     msgText = "Time's up! Mode revealed";
@@ -310,6 +311,7 @@
   <meta name="description" content="Practice playing modes on guitar with real-time pitch detection.">
 </svelte:head>
 
+<div class="ex-layout">
 <div class="nt-wrap">
   <header class="nt-hdr">
     <h1>Mode Trainer</h1>
@@ -374,15 +376,13 @@
     {#if showReset}
       <button class="nt-btn" onclick={onReset}>Reset</button>
     {/if}
-    <button class="nt-btn" onclick={() => showDash = !showDash}>{showDash ? 'Hide' : 'Show'} Dashboard</button>
   </div>
-  {#if showDash}
-    <LearningDashboard {engine} onclose={() => showDash = false} />
-  {/if}
+</div>
+<LearningDashboard {engine} />
 </div>
 
 <style>
-  .nt-wrap{display:flex;flex-direction:column;min-height:100vh;width:100%;padding:.5rem 1rem;gap:.5rem;background:var(--bg);color:var(--tx);font-family:'Outfit',sans-serif}
+  .nt-wrap{display:flex;flex-direction:column;min-height:100vh;flex:1;min-width:0;padding:.5rem 1rem;gap:.5rem;background:var(--bg);color:var(--tx);font-family:'Outfit',sans-serif}
   .nt-hdr{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;flex-wrap:wrap;gap:.5rem}
   .nt-hdr h1{font-size:18px;font-weight:900;letter-spacing:-1px}
   .nt-nav{display:flex;gap:.4rem}

@@ -10,7 +10,6 @@
   import LearningDashboard from '$lib/components/LearningDashboard.svelte';
 
   let qStartTime = 0;
-  let showDash = $state(false);
 
   // --- Reactive state ---
   let phase = $state('idle');
@@ -46,6 +45,7 @@
   let holdStart = 0;
   let wrongHold = 0;
   let wrongCd = 0;
+  let lastDetected = '';
 
   // Audio
   const audio = new AudioManager();
@@ -104,7 +104,7 @@
   }
 
   function onWrong() {
-    engine.report({note: travNote, frets: travFrets}, false);
+    engine.report({note: travNote, frets: travFrets}, false, undefined, { detected: lastDetected });
     streak = 0; attempts++;
     const pen = Math.min(score, 5);
     score -= pen;
@@ -187,6 +187,7 @@
 
   // --- Detection ---
   function onDetect(note, cents, hz, semi) {
+    lastDetected = note || '';
     const nm = note === travNote;
     const expMidi = BASE_MIDI[travIdx] + travFrets[travIdx];
     const midiDiff = Math.abs(semi + 69 - expMidi);
@@ -293,6 +294,7 @@
   <meta name="description" content="Practice playing notes across all 6 guitar strings with real-time pitch detection.">
 </svelte:head>
 
+<div class="ex-layout">
 <div class="nt-wrap">
   <header class="nt-hdr">
     <h1>String Traversal</h1>
@@ -365,15 +367,13 @@
     {#if showReset}
       <button class="nt-btn" onclick={onReset}>Reset</button>
     {/if}
-    <button class="nt-btn" onclick={() => showDash = !showDash}>{showDash ? 'Hide' : 'Show'} Dashboard</button>
   </div>
-  {#if showDash}
-    <LearningDashboard {engine} onclose={() => showDash = false} />
-  {/if}
+</div>
+  <LearningDashboard {engine} />
 </div>
 
 <style>
-  .nt-wrap{display:flex;flex-direction:column;min-height:100vh;width:100%;padding:.5rem 1rem;gap:.5rem;background:var(--bg);color:var(--tx);font-family:'Outfit',sans-serif}
+  .nt-wrap{display:flex;flex-direction:column;min-height:100vh;flex:1;min-width:0;padding:.5rem 1rem;gap:.5rem;background:var(--bg);color:var(--tx);font-family:'Outfit',sans-serif}
   .nt-hdr{display:flex;justify-content:space-between;align-items:center;flex-shrink:0;flex-wrap:wrap;gap:.5rem}
   .nt-hdr h1{font-size:18px;font-weight:900;letter-spacing:-1px}
   .nt-nav{display:flex;gap:.4rem}

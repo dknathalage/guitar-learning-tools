@@ -5,7 +5,7 @@
 
   let progress = $state(loadProgress());
 
-  let displayChapters = $derived(CHAPTERS.filter(ch => ch.id <= 7));
+  let displayChapters = $derived(CHAPTERS);
 
   let chapProgress = $derived(
     Object.fromEntries(displayChapters.map(ch => [
@@ -35,7 +35,7 @@
 
 <svelte:head>
   <title>Guitar Learning Tools</title>
-  <meta name="description" content="Interactive guitar learning pathway — master the fretboard through 9 chapters of theory and exercises.">
+  <meta name="description" content="Interactive guitar learning pathway — master the fretboard through 5 chapters of mic-based exercises.">
 </svelte:head>
 
 <div class="tree-page">
@@ -44,7 +44,7 @@
     <div class="tree-sub">
       <span class="tree-sub-track">{totalCompleted}/{totalExercises} exercises</span>
       <span class="tree-sub-sep">&middot;</span>
-      <span>7 chapters</span>
+      <span>5 chapters</span>
     </div>
   </header>
 
