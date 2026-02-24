@@ -1,5 +1,5 @@
 import { NOTES, INTERVALS } from '$lib/constants/music.js';
-import { NT_NATURAL, noteAt, fretForNote, BASE_MIDI } from '$lib/music/fretboard.js';
+import { NT_NATURAL, noteAt, fretForNote, BASE_MIDI, LANDMARKS, nearestLandmark, landmarkZone } from '$lib/music/fretboard.js';
 
 export const intervalTrainerConfig = {
   initialParams: { maxFret: 10, naturalsOnly: true, timer: 0, intervals: [3, 4, 5, 7, 12] },
@@ -9,12 +9,15 @@ export const intervalTrainerConfig = {
   },
 
   itemClusters(item) {
-    return [
+    const clusters = [
       'intv_' + item.interval.abbr,
       'str_' + item.ref.str,
       'root_' + item.ref.note,
-      item.interval.semi <= 4 ? 'size_small' : item.interval.semi <= 8 ? 'size_med' : 'size_large'
+      item.interval.semi <= 4 ? 'size_small' : item.interval.semi <= 8 ? 'size_med' : 'size_large',
+      landmarkZone(item.ref.fret)
     ];
+    if (LANDMARKS.includes(item.ref.fret)) clusters.push('landmark');
+    return clusters;
   },
 
   itemFromKey(key, params) {
@@ -45,10 +48,13 @@ export const intervalTrainerConfig = {
   genRandom(params, lastItem) {
     const allowedIntvs = INTERVALS.filter(i => params.intervals.includes(i.semi));
     const intv = allowedIntvs[Math.floor(Math.random() * allowedIntvs.length)];
+    const useLandmark = Math.random() < 0.4;
 
     const cands = [];
     for (let s = 0; s < 6; s++) {
-      for (let f = 0; f <= params.maxFret; f++) {
+      const fretPool = useLandmark ? LANDMARKS.filter(l => l <= params.maxFret) : null;
+      const frets = fretPool || Array.from({ length: params.maxFret + 1 }, (_, i) => i);
+      for (const f of frets) {
         const n = noteAt(s, f);
         if (params.naturalsOnly && !NT_NATURAL.includes(n)) continue;
         const tn = NOTES[(NOTES.indexOf(n) + intv.semi) % 12];
@@ -164,6 +170,48 @@ export const intervalTrainerConfig = {
       }
     }
 
+    if (clusterId.startsWith('zone_')) {
+      const allowedIntvs = INTERVALS.filter(i => params.intervals.includes(i.semi));
+      const intv = allowedIntvs[Math.floor(Math.random() * allowedIntvs.length)];
+      const cands = [];
+      for (let s = 0; s < 6; s++) {
+        for (let f = 0; f <= params.maxFret; f++) {
+          if (landmarkZone(f) !== clusterId) continue;
+          const n = noteAt(s, f);
+          if (params.naturalsOnly && !NT_NATURAL.includes(n)) continue;
+          const tn = NOTES[(NOTES.indexOf(n) + intv.semi) % 12];
+          if (params.naturalsOnly && !NT_NATURAL.includes(tn)) continue;
+          cands.push({ note: n, str: s, fret: f, midi: BASE_MIDI[s] + f });
+        }
+      }
+      if (cands.length > 0) {
+        const ref = cands[Math.floor(Math.random() * cands.length)];
+        const targetNote = NOTES[(NOTES.indexOf(ref.note) + intv.semi) % 12];
+        return { ref, interval: intv, targetNote };
+      }
+    }
+
+    if (clusterId === 'landmark') {
+      const allowedIntvs = INTERVALS.filter(i => params.intervals.includes(i.semi));
+      const intv = allowedIntvs[Math.floor(Math.random() * allowedIntvs.length)];
+      const cands = [];
+      for (let s = 0; s < 6; s++) {
+        for (const f of LANDMARKS) {
+          if (f > params.maxFret) continue;
+          const n = noteAt(s, f);
+          if (params.naturalsOnly && !NT_NATURAL.includes(n)) continue;
+          const tn = NOTES[(NOTES.indexOf(n) + intv.semi) % 12];
+          if (params.naturalsOnly && !NT_NATURAL.includes(tn)) continue;
+          cands.push({ note: n, str: s, fret: f, midi: BASE_MIDI[s] + f });
+        }
+      }
+      if (cands.length > 0) {
+        const ref = cands[Math.floor(Math.random() * cands.length)];
+        const targetNote = NOTES[(NOTES.indexOf(ref.note) + intv.semi) % 12];
+        return { ref, interval: intv, targetNote };
+      }
+    }
+
     return this.genRandom(params, lastItem);
   },
 
@@ -181,18 +229,19 @@ export const intervalTrainerConfig = {
       targetNote: easyTarget
     };
 
-    // 2. Same interval as failed, but from open string (fret 0) on any string.
-    const openStrings = [];
+    // 2. Same interval as failed, but from nearest landmark position on any string.
+    const lmFret = nearestLandmark(ref.fret);
+    const lmStrings = [];
     for (let s = 0; s < 6; s++) {
-      const n = noteAt(s, 0);
+      const n = noteAt(s, lmFret);
       const tn = NOTES[(NOTES.indexOf(n) + failedSemi) % 12];
-      openStrings.push({
-        ref: { note: n, str: s, fret: 0, midi: BASE_MIDI[s] },
+      lmStrings.push({
+        ref: { note: n, str: s, fret: lmFret, midi: BASE_MIDI[s] + lmFret },
         interval: failedItem.interval,
         targetNote: tn
       });
     }
-    const drill2 = openStrings[Math.floor(Math.random() * openStrings.length)];
+    const drill2 = lmStrings[Math.floor(Math.random() * lmStrings.length)];
 
     return [drill1, drill2];
   },
@@ -201,11 +250,10 @@ export const intervalTrainerConfig = {
     if (!weakCluster) return [];
 
     if (weakCluster.startsWith('intv_')) {
-      // same_root_ladder: same root, next interval in ascending order
       const currentSemi = item.interval.semi;
       const allowed = INTERVALS.filter(i => params.intervals.includes(i.semi) && i.semi > currentSemi);
       if (allowed.length > 0) {
-        const nextIntv = allowed[0]; // next ascending
+        const nextIntv = allowed[0];
         const targetNote = NOTES[(NOTES.indexOf(item.ref.note) + nextIntv.semi) % 12];
         return [{
           ref: { ...item.ref },
@@ -217,7 +265,6 @@ export const intervalTrainerConfig = {
     }
 
     if (weakCluster.startsWith('root_')) {
-      // same_interval_diff_root: same interval, different root
       const intv = item.interval;
       const cands = [];
       for (let s = 0; s < 6; s++) {
@@ -240,6 +287,22 @@ export const intervalTrainerConfig = {
       return [];
     }
 
+    if (weakCluster.startsWith('zone_')) {
+      const zoneToLandmark = { zone_0: 0, zone_3: 3, zone_5: 5, zone_7: 7, zone_9: 9, zone_12: 12 };
+      const lmFret = zoneToLandmark[weakCluster];
+      if (lmFret !== undefined && lmFret <= params.maxFret) {
+        const intv = item.interval;
+        const n = noteAt(item.ref.str, lmFret);
+        const tn = NOTES[(NOTES.indexOf(n) + intv.semi) % 12];
+        return [{
+          ref: { note: n, str: item.ref.str, fret: lmFret, midi: BASE_MIDI[item.ref.str] + lmFret },
+          interval: intv,
+          targetNote: tn
+        }];
+      }
+      return [];
+    }
+
     return [];
   },
 
@@ -253,8 +316,7 @@ export const intervalTrainerConfig = {
     if (dir > 0) {
       // Harder
       if (!isAllIntervals) { p.intervals = ALL_INTERVALS; }
-      else if (p.maxFret < 14) { p.maxFret = 14; }
-      else if (p.maxFret < 19) { p.maxFret = 19; }
+      else if (p.maxFret < 12) { p.maxFret = 12; }
       else if (p.naturalsOnly) { p.naturalsOnly = false; }
       else if (p.timer === 0) { p.timer = 20; }
       else if (p.timer > 8) { p.timer = 8; }
@@ -263,7 +325,6 @@ export const intervalTrainerConfig = {
       if (p.timer > 0 && p.timer <= 8) { p.timer = 20; }
       else if (p.timer > 0) { p.timer = 0; }
       else if (!p.naturalsOnly) { p.naturalsOnly = true; }
-      else if (p.maxFret > 14) { p.maxFret = 14; }
       else if (p.maxFret > 10) { p.maxFret = 10; }
       else if (isAllIntervals) { p.intervals = [3, 4, 5, 7, 12]; }
     }

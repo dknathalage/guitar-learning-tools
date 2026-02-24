@@ -1,5 +1,5 @@
 import { NOTES } from '$lib/constants/music.js';
-import { NT_NATURAL, fretForNote } from '$lib/music/fretboard.js';
+import { NT_NATURAL, fretForNote, landmarkZone } from '$lib/music/fretboard.js';
 
 function buildItem(note, maxFret) {
   const frets = [];
@@ -30,9 +30,11 @@ export const stringTraversalConfig = {
   },
 
   itemClusters(item) {
+    const loFret = Math.min(...item.frets);
     return [
       'note_' + item.note,
-      NT_NATURAL.includes(item.note) ? 'natural' : 'accidental'
+      NT_NATURAL.includes(item.note) ? 'natural' : 'accidental',
+      landmarkZone(loFret)
     ];
   },
 
@@ -112,11 +114,10 @@ export const stringTraversalConfig = {
   adjustParams(params, dir, mag) {
     const p = { ...params };
 
-    // Escalation order (harder): maxFret 10->14->19, naturalsOnly true->false, timer 0->45->15
+    // Escalation order (harder): maxFret 10->12, naturalsOnly true->false, timer 0->45->15
     if (dir > 0 && mag > 0.3) {
       // Make harder
-      if (p.maxFret === 10) p.maxFret = 14;
-      else if (p.maxFret === 14) p.maxFret = 19;
+      if (p.maxFret < 12) p.maxFret = 12;
       else if (p.naturalsOnly) p.naturalsOnly = false;
       else if (p.timer === 0) p.timer = 45;
       else if (p.timer === 45) p.timer = 15;
@@ -125,8 +126,7 @@ export const stringTraversalConfig = {
       if (p.timer === 15) p.timer = 45;
       else if (p.timer === 45) p.timer = 0;
       else if (!p.naturalsOnly) p.naturalsOnly = true;
-      else if (p.maxFret === 19) p.maxFret = 14;
-      else if (p.maxFret === 14) p.maxFret = 10;
+      else if (p.maxFret > 10) p.maxFret = 10;
     }
 
     return p;

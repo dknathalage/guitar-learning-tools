@@ -8,8 +8,8 @@
 
   const CT_DIFF = {
     beginner:    {label:'Beginner',    maxFret:10, naturalsOnly:true,  timer:0,  types:['maj','min'], tones:['R','3','5'], tip:'Maj/Min triads \u00b7 R/3/5 \u00b7 Naturals'},
-    intermediate:{label:'Intermediate',maxFret:14, naturalsOnly:false, timer:0,  types:['maj','min','7','maj7','m7'], tones:['R','3','5','7'], tip:'7th chords \u00b7 All tones'},
-    advanced:    {label:'Advanced',    maxFret:19, naturalsOnly:false, timer:12, types:['maj','min','7','maj7','m7'], tones:['R','3','5','7'], tip:'All chords \u00b7 12s timer'}
+    intermediate:{label:'Intermediate',maxFret:12, naturalsOnly:false, timer:0,  types:['maj','min','7','maj7','m7'], tones:['R','3','5','7'], tip:'7th chords \u00b7 All tones'},
+    advanced:    {label:'Advanced',    maxFret:12, naturalsOnly:false, timer:12, types:['maj','min','7','maj7','m7'], tones:['R','3','5','7'], tip:'All chords \u00b7 12s timer'}
   };
 
   // --- Reactive state ---

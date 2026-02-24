@@ -13,6 +13,28 @@ export function fretForNote(s, n, max) {
   return r;
 }
 
+export const LANDMARKS = [0, 3, 5, 7, 9, 12];
+
+export function nearestLandmark(fret) {
+  let best = 0, bestD = fret;
+  for (const lm of LANDMARKS) {
+    const d = Math.abs(fret - lm);
+    if (d < bestD) { bestD = d; best = lm; }
+  }
+  return best;
+}
+
+// Zone boundaries — each fret maps to its nearest landmark:
+// zone_0: 0-1, zone_3: 2-4, zone_5: 5-6, zone_7: 7-8, zone_9: 9-10, zone_12: 11-12
+export function landmarkZone(fret) {
+  if (fret <= 1) return 'zone_0';
+  if (fret <= 4) return 'zone_3';
+  if (fret <= 6) return 'zone_5';
+  if (fret <= 8) return 'zone_7';
+  if (fret <= 10) return 'zone_9';
+  return 'zone_12';
+}
+
 export function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));

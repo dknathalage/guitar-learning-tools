@@ -52,7 +52,12 @@ export class LearningEngine {
       // 5. Review item
       item = this._reviewPick();
       if (item === null) {
-        item = this.config.genRandom(this.params, this.lastItem);
+        const weak = this._weakestCluster();
+        if (weak) {
+          item = this.config.genFromCluster(weak, this.params, this.lastItem);
+        } else {
+          item = this.config.genRandom(this.params, this.lastItem);
+        }
         this._ensureItem(item);
       }
     }
