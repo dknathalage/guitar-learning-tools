@@ -81,7 +81,10 @@ export const CHAPTERS = [
       'Roman numerals show chord functions: tonic, subdominant, dominant',
       'Same progressions appear across pop, rock, folk, and classical'
     ],
-    exercises: []
+    exercises: [
+      { id: 'diatonic-quiz',     name: 'Diatonic Quiz',     path: '/theory/diatonic-quiz',     mic: false },
+      { id: 'progression-namer', name: 'Progression Namer', path: '/theory/progression-namer', mic: false }
+    ]
   },
   {
     id: 7, title: 'Rhythm', color: '#A78BFA', docsPath: 'docs/ch7-rhythm.md',
@@ -92,7 +95,9 @@ export const CHAPTERS = [
       'Counting: 1-2-3-4 (quarters), 1&2&3&4& (eighths), triplets',
       'Rhythm is the neglected dimension self-taught guitarists must internalize'
     ],
-    exercises: []
+    exercises: [
+      { id: 'rhythm-tap', name: 'Rhythm Tap', path: '/exercises/rhythm-tap', mic: false }
+    ]
   },
   {
     id: 8, title: 'Application', color: '#34D399', docsPath: 'docs/ch8-application.md',
