@@ -92,7 +92,6 @@
             <div class="ld-stat"><span class="ld-stat-val">{mastery.overall.sessionQuestions}</span><span class="ld-stat-lbl">Questions</span></div>
             <div class="ld-stat"><span class="ld-stat-val">{fmtPct(mastery.overall.sessionAccuracy)}</span><span class="ld-stat-lbl">Accuracy</span></div>
             <div class="ld-stat"><span class="ld-stat-val">{fmtMs(mastery.overall.avgResponseTime)}</span><span class="ld-stat-lbl">Avg Time</span></div>
-            <div class="ld-stat"><span class="ld-stat-val">{mastery.overall.timeThreshold > 0 ? fmtMs(mastery.overall.timeThreshold) : '\u2014'}</span><span class="ld-stat-lbl">Threshold</span></div>
           </div>
           {#if mastery.overall.avgResponseTime > 0}
             <div class="ld-sparkline-section">

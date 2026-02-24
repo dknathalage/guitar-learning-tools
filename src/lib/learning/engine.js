@@ -64,9 +64,13 @@ export class LearningEngine {
       candidates.push({ item, rec, isNew: false });
     }
 
-    // New candidates
+    // New candidates — mix in frontier items based on recent mastery
+    const fp = this._frontierProb();
+    const frontierParams = fp > 0 ? this.config.adjustParams(this.params, 1, 0.5) : null;
     for (let i = 0; i < 3; i++) {
-      const item = this.config.genRandom(this.params, this.lastItem);
+      const useFrontier = frontierParams && Math.random() < fp;
+      const p = useFrontier ? frontierParams : this.params;
+      const item = this.config.genRandom(p, this.lastItem);
       const key = this.config.itemKey(item);
       if (!this.items.has(key)) {
         candidates.push({ item, rec: null, isNew: true });
@@ -166,7 +170,6 @@ export class LearningEngine {
 
   getMastery() {
     const itemList = [];
-    const threshold = this._timeThreshold();
 
     for (const [key, rec] of this.items) {
       itemList.push({
@@ -176,7 +179,7 @@ export class LearningEngine {
         ivl: rec.ivl,
         reps: rec.reps,
         avgTime: rec.avgTime,
-        mastered: this._isMastered(rec, threshold),
+        mastered: this._isMastered(rec),
         attempts: rec.attempts,
         correct: rec.correct,
         streak: rec.streak,
@@ -219,7 +222,6 @@ export class LearningEngine {
         masteredCount,
         pctMastered: totalItems > 0 ? masteredCount / totalItems : 0,
         avgResponseTime,
-        timeThreshold: threshold,
         sessionQuestions: this.qNum,
         sessionAccuracy: totalAtt > 0 ? totalCorrect / totalAtt : 0,
       },
@@ -311,10 +313,13 @@ export class LearningEngine {
     const exploitation = 1 - pL;
     const exploration = C * Math.sqrt(Math.log(this.totalAttempts + 1) / Math.max(1, rec.attempts));
 
-    // Due bonus
+    // Due bonus — overdue mastered items get a strong boost for spaced review
     let dueBonus = 0;
     if (rec.due <= this.qNum && rec.ivl > 0) {
-      dueBonus = 0.3 * Math.min(3, (this.qNum - rec.due) / rec.ivl);
+      const overdue = (this.qNum - rec.due) / rec.ivl;
+      dueBonus = pL >= 0.94
+        ? 0.5 * Math.min(3, overdue)   // mastered: boost enough to compete with new items
+        : 0.3 * Math.min(3, overdue);
     }
 
     // Desirable zone bonus
@@ -336,9 +341,8 @@ export class LearningEngine {
     return exploitation + exploration + dueBonus + desirable + interleave;
   }
 
-  _isMastered(rec, threshold) {
-    return rec.pL >= 0.94 && rec.reps >= 2 && rec.attempts >= 4 &&
-      (threshold <= 0 || rec.avgTime <= 0 || rec.avgTime < threshold);
+  _isMastered(rec) {
+    return rec.pL >= 0.94 && rec.reps >= 2 && rec.attempts >= 4;
   }
 
   _timeThreshold() {
@@ -360,19 +364,24 @@ export class LearningEngine {
     const recent = seen.filter(r => this.qNum - r.lastSeen <= recentWindow);
     const basis = recent.length >= 5 ? recent : seen;
     const avgPL = basis.reduce((s, r) => s + r.pL, 0) / basis.length;
-    const recentTimes = this.allCorrectTimes.slice(-20);
-    const avgTime = recentTimes.length > 0 ? recentTimes.reduce((s, t) => s + t, 0) / recentTimes.length : 0;
-    const threshold = this._timeThreshold();
-    const fastEnough = threshold <= 0 || avgTime <= 0 || avgTime < threshold * 1.5;
-
     let dir;
-    if (avgPL > 0.85 && fastEnough) dir = 1;
+    if (avgPL > 0.85) dir = 1;
     else if (avgPL < 0.55) dir = -1;
     else return;
 
     const midpoint = 0.70;
     const mag = 1 / (1 + Math.exp(-8 * (Math.abs(avgPL - midpoint) - 0.1)));
     this.params = this.config.adjustParams(this.params, dir, mag);
+  }
+
+  _frontierProb() {
+    const recent = [...this.items.values()]
+      .filter(r => r.attempts > 0 && this.qNum - r.lastSeen <= ADJ_EVERY * 2);
+    if (recent.length < 3) return 0;
+    const avgPL = recent.reduce((s, r) => s + r.pL, 0) / recent.length;
+    // Ramp: 0 below pL 0.6, linearly up to 0.3 at pL 0.9+
+    if (avgPL < 0.6) return 0;
+    return Math.min(0.3, (avgPL - 0.6) / 0.3 * 0.3);
   }
 
   _ensureItem(item) {
