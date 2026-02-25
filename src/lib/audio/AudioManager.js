@@ -1,12 +1,14 @@
 import { yinDetect, rms, freqToNote } from './pitch.js';
 
-export class AudioManager {
+export class AudioManager extends EventTarget {
   constructor() {
+    super();
     this.audioCtx = null;
     this.analyser = null;
     this.stream = null;
     this.rafId = null;
-    this.buf = null;
+    this.buffer = null;
+    this.cachedSampleRate = null;
   }
 
   async start() {
@@ -23,10 +25,18 @@ export class AudioManager {
       this.audioCtx = ctx;
       this.analyser = an;
       this.stream = stream;
-      this.buf = new Float32Array(an.fftSize);
-      return true;
-    } catch {
-      return false;
+      this.buffer = new Float32Array(an.fftSize);
+      this.cachedSampleRate = ctx.sampleRate;
+      return { ok: true };
+    } catch (err) {
+      const name = err && err.name;
+      if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+        return { ok: false, error: 'mic_denied', message: 'Microphone access denied. Please allow microphone in browser settings.' };
+      }
+      if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+        return { ok: false, error: 'no_mic', message: 'No microphone found on this device.' };
+      }
+      return { ok: false, error: 'unknown', message: 'Could not start audio: ' + (err && err.message || 'unknown error') };
     }
   }
 
@@ -35,26 +45,26 @@ export class AudioManager {
     if (this.stream) { this.stream.getTracks().forEach(t => t.stop()); this.stream = null; }
     if (this.audioCtx) { this.audioCtx.close(); this.audioCtx = null; }
     this.analyser = null;
-    this.buf = null;
+    this.buffer = null;
   }
 
-  startLoop(onDetect, onSilence) {
+  startLoop() {
     let prevNote = null;
     let stableCount = 0;
     const STABLE_FRAMES = 3;
     const loop = () => {
       if (!this.analyser) return;
-      this.analyser.getFloatTimeDomainData(this.buf);
-      if (rms(this.buf) < 0.01) {
+      this.analyser.getFloatTimeDomainData(this.buffer);
+      if (rms(this.buffer) < 0.01) {
         prevNote = null; stableCount = 0;
-        onSilence();
+        this.dispatchEvent(new CustomEvent('silence'));
         this.rafId = requestAnimationFrame(loop);
         return;
       }
-      const hz = yinDetect(this.buf, this.audioCtx.sampleRate);
+      const hz = yinDetect(this.buffer, this.audioCtx.sampleRate);
       if (!hz || hz < 50 || hz > 1400) {
         prevNote = null; stableCount = 0;
-        onSilence();
+        this.dispatchEvent(new CustomEvent('silence'));
         this.rafId = requestAnimationFrame(loop);
         return;
       }
@@ -66,7 +76,7 @@ export class AudioManager {
         stableCount = 1;
       }
       if (stableCount >= STABLE_FRAMES) {
-        onDetect(note, cents, hz, semi);
+        this.dispatchEvent(new CustomEvent('detect', { detail: { note, cents, hz, semitones: semi } }));
       }
       this.rafId = requestAnimationFrame(loop);
     };

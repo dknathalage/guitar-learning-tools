@@ -460,7 +460,7 @@ describe('item selection', () => {
     // Seed both items
     engine._ensureItem(items[0]);
     engine._ensureItem(items[1]);
-    engine.qNum = 10; // Past cold start
+    engine.questionNumber = 10; // Past cold start
     engine.totalAttempts = 10;
 
     // Make 'easy' well-learned
@@ -477,8 +477,8 @@ describe('item selection', () => {
     hardRec.attempts = 5;
     hardRec.lastReviewTs = Date.now();
 
-    const easyScore = engine._scoreCandidate({ item: items[0], rec: easyRec, isNew: false });
-    const hardScore = engine._scoreCandidate({ item: items[1], rec: hardRec, isNew: false });
+    const easyScore = engine._scoreCandidate({ item: items[0], record: easyRec, isNew: false });
+    const hardScore = engine._scoreCandidate({ item: items[1], record: hardRec, isNew: false });
 
     expect(hardScore).toBeGreaterThan(easyScore);
   });
@@ -486,7 +486,7 @@ describe('item selection', () => {
   it('new item scoring uses gaussian based on theta proximity', () => {
     const engine = new LearningEngine(makeConfig(), null);
     engine.totalAttempts = 10;
-    engine.qNum = 10;
+    engine.questionNumber = 10;
     engine.theta = 0.3;
 
     // Item at difficulty close to theta should score higher than far away
@@ -496,14 +496,14 @@ describe('item selection', () => {
     engine.config = closeCfg;
     const closeScore = engine._scoreCandidate({
       item: { id: 'close', clusters: ['default'] },
-      rec: null,
+      record: null,
       isNew: true
     });
 
     engine.config = farCfg;
     const farScore = engine._scoreCandidate({
       item: { id: 'far', clusters: ['default'] },
-      rec: null,
+      record: null,
       isNew: true
     });
 
@@ -513,7 +513,7 @@ describe('item selection', () => {
   it('applies difficulty match bonus for known items near theta', () => {
     const engine = new LearningEngine(makeConfig(), null);
     engine.totalAttempts = 10;
-    engine.qNum = 10;
+    engine.questionNumber = 10;
     engine.theta = 0.3;
 
     const item = { id: 'test', clusters: ['uniq'] };
@@ -529,10 +529,10 @@ describe('item selection', () => {
     const farCfg = makeConfig({ itemDifficulty: () => 0.9 });
 
     engine.config = nearCfg;
-    const nearScore = engine._scoreCandidate({ item, rec, isNew: false });
+    const nearScore = engine._scoreCandidate({ item, record: rec, isNew: false });
 
     engine.config = farCfg;
-    const farScore = engine._scoreCandidate({ item, rec, isNew: false });
+    const farScore = engine._scoreCandidate({ item, record: rec, isNew: false });
 
     expect(nearScore).toBeGreaterThan(farScore);
   });
@@ -540,7 +540,7 @@ describe('item selection', () => {
   it('applies fatigue bias toward easier items when fatigued', () => {
     const engine = new LearningEngine(makeConfig(), null);
     engine.totalAttempts = 10;
-    engine.qNum = 10;
+    engine.questionNumber = 10;
     engine.fatigued = true;
 
     const easyItem = { id: 'easy', clusters: ['uniq1'] };
@@ -554,7 +554,7 @@ describe('item selection', () => {
     const hardRec = engine.items.get('hard');
     hardRec.pL = 0.2; hardRec.S = 1; hardRec.attempts = 5; hardRec.lastReviewTs = Date.now();
 
-    const easyScore = engine._scoreCandidate({ item: easyItem, rec: easyRec, isNew: false });
+    const easyScore = engine._scoreCandidate({ item: easyItem, record: easyRec, isNew: false });
     const easyFatigueBias = easyRec.pL * 0.3; // 0.27
 
     // With fatigue, easy items get +pL*0.3 boost
@@ -621,7 +621,7 @@ describe('v1 to v2 migration', () => {
     const v1Data = {
       v: 1,
       ts: Date.now(),
-      qNum: 15,
+      questionNumber: 15,
       totalAttempts: 20,
       allCorrectTimes: [1000, 1200, 900],
       items: {
@@ -640,7 +640,7 @@ describe('v1 to v2 migration', () => {
 
     const engine = new LearningEngine(makeConfig(), 'migrate-test');
 
-    expect(engine.qNum).toBe(15);
+    expect(engine.questionNumber).toBe(15);
     expect(engine.totalAttempts).toBe(20);
 
     const rec = engine.items.get('A');
@@ -667,7 +667,7 @@ describe('v1 to v2 migration', () => {
 
   it('handles v1 data with missing optional fields', () => {
     const v1Data = {
-      v: 1, ts: Date.now(), qNum: 2, totalAttempts: 2,
+      v: 1, ts: Date.now(), questionNumber: 2, totalAttempts: 2,
       items: {
         'B': { pL: 0.3, attempts: 2, correct: 1, cls: ['default'] }
       },
@@ -728,7 +728,7 @@ describe('getMastery', () => {
     engine.report(item, false);
 
     const mastery = engine.getMastery();
-    expect(mastery.overall.sessionQuestions).toBe(1); // qNum increments on next(), not report()
+    expect(mastery.overall.sessionQuestions).toBe(1); // questionNumber increments on next(), not report()
     expect(mastery.overall.totalItems).toBe(1);
     expect(mastery.overall.theta).toBeGreaterThan(0);
   });
@@ -744,12 +744,12 @@ describe('reset', () => {
     const item = engine.next();
     engine.report(item, true, 1000);
     engine.fatigued = true;
-    engine.sessionWindow.push({ ok: true, timeMs: 1000, qNum: 1 });
+    engine.sessionWindow.push({ ok: true, timeMs: 1000, questionNumber: 1 });
 
     engine.reset();
 
     expect(engine.items.size).toBe(0);
-    expect(engine.qNum).toBe(0);
+    expect(engine.questionNumber).toBe(0);
     expect(engine.theta).toBe(0.05);
     expect(engine.fatigued).toBe(false);
     expect(engine.sessionWindow).toHaveLength(0);
@@ -970,7 +970,7 @@ describe('FSRS due-date session planning', () => {
     rec.lastReviewTs = Date.now() - 2 * 86400000;
 
     // Go past cold start
-    engine.qNum = 7;
+    engine.questionNumber = 7;
     engine.totalAttempts = 10;
 
     const next = engine.next();
@@ -991,7 +991,7 @@ describe('FSRS due-date session planning', () => {
     rec.attempts = 3;
     rec.lastReviewTs = Date.now();
 
-    engine.qNum = 7;
+    engine.questionNumber = 7;
     engine.totalAttempts = 10;
     engine.overdueQueue = null; // force rebuild
 
@@ -1141,7 +1141,7 @@ describe('adaptive sigma/offset (85% target)', () => {
 
     // Fill session window with >90% accuracy
     for (let i = 0; i < 20; i++) {
-      engine.sessionWindow.push({ ok: i < 19, timeMs: 500, qNum: i + 1 }); // 95% accuracy
+      engine.sessionWindow.push({ ok: i < 19, timeMs: 500, questionNumber: i + 1 }); // 95% accuracy
     }
 
     const sigma = engine._adaptiveSigma();
@@ -1154,7 +1154,7 @@ describe('adaptive sigma/offset (85% target)', () => {
 
     // Fill session window with <80% accuracy
     for (let i = 0; i < 20; i++) {
-      engine.sessionWindow.push({ ok: i < 10, timeMs: 500, qNum: i + 1 }); // 50% accuracy
+      engine.sessionWindow.push({ ok: i < 10, timeMs: 500, questionNumber: i + 1 }); // 50% accuracy
     }
 
     const sigma = engine._adaptiveSigma();
@@ -1166,7 +1166,7 @@ describe('adaptive sigma/offset (85% target)', () => {
     engine.totalAttempts = 20;
 
     for (let i = 0; i < 20; i++) {
-      engine.sessionWindow.push({ ok: true, timeMs: 500, qNum: i + 1 });
+      engine.sessionWindow.push({ ok: true, timeMs: 500, questionNumber: i + 1 });
     }
 
     const offset = engine._adaptiveOffset();
@@ -1178,7 +1178,7 @@ describe('adaptive sigma/offset (85% target)', () => {
     engine.totalAttempts = 20;
 
     for (let i = 0; i < 20; i++) {
-      engine.sessionWindow.push({ ok: i < 10, timeMs: 500, qNum: i + 1 });
+      engine.sessionWindow.push({ ok: i < 10, timeMs: 500, questionNumber: i + 1 });
     }
 
     const offset = engine._adaptiveOffset();
@@ -1383,7 +1383,7 @@ describe('coverage matrix', () => {
     const engine = new LearningEngine(makeConfig({
       itemClusters: (item) => item.clusters,
     }), null);
-    engine.qNum = 10;
+    engine.questionNumber = 10;
     engine.totalAttempts = 10;
 
     const item = { id: 'sparse', clusters: ['str_3', 'zone_7'] };
@@ -1394,7 +1394,7 @@ describe('coverage matrix', () => {
     rec.attempts = 3;
     rec.lastReviewTs = Date.now();
 
-    const score = engine._scoreCandidate({ item, rec, isNew: false });
+    const score = engine._scoreCandidate({ item, record: rec, isNew: false });
     // Score should include coverage bonus since str_3/zone_7 has < 3 items
     expect(score).toBeGreaterThan(0);
   });

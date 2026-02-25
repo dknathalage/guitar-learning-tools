@@ -1,5 +1,61 @@
 <script>
-  let { ref, interval, targetDisplay, targetHidden, fbHtml, fbSuccess, fbFlash } = $props();
+  import { renderNoteFretboard, getFretboardDimensions } from '$lib/music/fretboard.js';
+  import { createHoldDetector } from './holdDetection.js';
+
+  let { item = null, recall = false, onComplete, onWrong, setMsg, showDetected } = $props();
+
+  let ref = $state(null);
+  let interval = $state(null);
+  let target = $state(null);
+  let targetDisplay = $state('\u2014');
+  let targetHidden = $state(false);
+  let fbHtml = $state('');
+  let fbSuccess = $state(false);
+  let fbFlash = $state(false);
+
+  const hold = createHoldDetector();
+
+  export function prepare(inner, isRecall) {
+    item = inner;
+    recall = isRecall;
+    hold.reset();
+    ref = inner.ref;
+    interval = inner.interval;
+    target = inner.targetNote;
+    if (isRecall) {
+      targetDisplay = '?';
+      targetHidden = true;
+      const d = getFretboardDimensions();
+      fbHtml = `<svg viewBox="0 0 ${d.W} ${d.H}" xmlns="http://www.w3.org/2000/svg"><text x="${d.W/2}" y="${d.H/2}" text-anchor="middle" dominant-baseline="central" fill="#222" font-size="60" font-family="Outfit" font-weight="900">?</text></svg>`;
+    } else {
+      targetDisplay = inner.targetNote;
+      targetHidden = false;
+      fbHtml = renderNoteFretboard(inner.ref, null, false);
+    }
+    fbSuccess = false;
+    fbFlash = false;
+    setMsg('Listening...', false);
+  }
+
+  export function handleDetection(note, cents, hz, semi) {
+    if (!target) return;
+    const ok = note === target;
+    showDetected(note, cents, hz, ok);
+    hold.check(ok, true, () => {
+      targetDisplay = target;
+      targetHidden = false;
+      fbHtml = renderNoteFretboard(ref, null, true);
+      fbSuccess = true;
+      fbFlash = true;
+      onComplete(10, 2);
+      setTimeout(() => { fbSuccess = false; fbFlash = false; }, recall ? 1200 : 800);
+    }, onWrong);
+  }
+
+  export function handleSilence() {
+    showDetected(null, 0, 0, false);
+    hold.reset();
+  }
 </script>
 
 <div class="nt-intv-section">

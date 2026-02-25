@@ -1,5 +1,5 @@
 import { NOTES } from '$lib/constants/music.js';
-import { STD_SHAPES, adaptShape, getBf } from '$lib/music/chords.js';
+import { STANDARD_SHAPES, adaptShapeToTuning, getBaseFret } from '$lib/music/chords.js';
 import { landmarkZone } from '$lib/music/fretboard.js';
 
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
@@ -66,8 +66,8 @@ export const chordTransitionConfig = {
 
   genRandom(lastItem) {
     const pair = COMMON_PAIRS[Math.floor(Math.random() * COMMON_PAIRS.length)];
-    const fromSh = STD_SHAPES[Math.floor(Math.random() * STD_SHAPES.length)];
-    const toSh = STD_SHAPES[Math.floor(Math.random() * STD_SHAPES.length)];
+    const fromSh = STANDARD_SHAPES[Math.floor(Math.random() * STANDARD_SHAPES.length)];
+    const toSh = STANDARD_SHAPES[Math.floor(Math.random() * STANDARD_SHAPES.length)];
     const fromRoot = Math.floor(Math.random() * 12);
     const toRoot = Math.floor(Math.random() * 12);
     const item = {
@@ -84,7 +84,7 @@ export const chordTransitionConfig = {
     if (clusterId.startsWith('from_shape_')) {
       const shapeId = clusterId.slice(11);
       const pair = COMMON_PAIRS[Math.floor(Math.random() * COMMON_PAIRS.length)];
-      const toSh = STD_SHAPES[Math.floor(Math.random() * STD_SHAPES.length)];
+      const toSh = STANDARD_SHAPES[Math.floor(Math.random() * STANDARD_SHAPES.length)];
       return {
         fromShapeId: shapeId, fromTypeId: pair[0], fromRootIdx: Math.floor(Math.random() * 12),
         toShapeId: toSh.id, toTypeId: pair[1], toRootIdx: Math.floor(Math.random() * 12),
@@ -94,7 +94,7 @@ export const chordTransitionConfig = {
     if (clusterId.startsWith('to_shape_')) {
       const shapeId = clusterId.slice(9);
       const pair = COMMON_PAIRS[Math.floor(Math.random() * COMMON_PAIRS.length)];
-      const fromSh = STD_SHAPES[Math.floor(Math.random() * STD_SHAPES.length)];
+      const fromSh = STANDARD_SHAPES[Math.floor(Math.random() * STANDARD_SHAPES.length)];
       return {
         fromShapeId: fromSh.id, fromTypeId: pair[0], fromRootIdx: Math.floor(Math.random() * 12),
         toShapeId: shapeId, toTypeId: pair[1], toRootIdx: Math.floor(Math.random() * 12),
@@ -106,8 +106,8 @@ export const chordTransitionConfig = {
       const rootIdx = NOTES.indexOf(rootName);
       if (rootIdx >= 0) {
         const pair = COMMON_PAIRS[Math.floor(Math.random() * COMMON_PAIRS.length)];
-        const fromSh = STD_SHAPES[Math.floor(Math.random() * STD_SHAPES.length)];
-        const toSh = STD_SHAPES[Math.floor(Math.random() * STD_SHAPES.length)];
+        const fromSh = STANDARD_SHAPES[Math.floor(Math.random() * STANDARD_SHAPES.length)];
+        const toSh = STANDARD_SHAPES[Math.floor(Math.random() * STANDARD_SHAPES.length)];
         return {
           fromShapeId: fromSh.id, fromTypeId: pair[0], fromRootIdx: rootIdx,
           toShapeId: toSh.id, toTypeId: pair[1], toRootIdx: Math.floor(Math.random() * 12),
@@ -120,8 +120,8 @@ export const chordTransitionConfig = {
       const rootIdx = NOTES.indexOf(rootName);
       if (rootIdx >= 0) {
         const pair = COMMON_PAIRS[Math.floor(Math.random() * COMMON_PAIRS.length)];
-        const fromSh = STD_SHAPES[Math.floor(Math.random() * STD_SHAPES.length)];
-        const toSh = STD_SHAPES[Math.floor(Math.random() * STD_SHAPES.length)];
+        const fromSh = STANDARD_SHAPES[Math.floor(Math.random() * STANDARD_SHAPES.length)];
+        const toSh = STANDARD_SHAPES[Math.floor(Math.random() * STANDARD_SHAPES.length)];
         return {
           fromShapeId: fromSh.id, fromTypeId: pair[0], fromRootIdx: Math.floor(Math.random() * 12),
           toShapeId: toSh.id, toTypeId: pair[1], toRootIdx: rootIdx,
@@ -149,7 +149,7 @@ export const chordTransitionConfig = {
     if (!weakCluster) return [];
 
     if (weakCluster.startsWith('from_shape_') || weakCluster.startsWith('to_shape_')) {
-      const allShapeIds = STD_SHAPES.map(s => s.id);
+      const allShapeIds = STANDARD_SHAPES.map(s => s.id);
       const otherShapes = allShapeIds.filter(id => id !== item.fromShapeId && id !== item.toShapeId);
       if (otherShapes.length > 0) {
         const newShape = otherShapes[Math.floor(Math.random() * otherShapes.length)];

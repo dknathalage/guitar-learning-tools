@@ -1,6 +1,71 @@
 <script>
-  import { NT_STR_NAMES } from '$lib/music/fretboard.js';
-  let { challenge, noteIdx, fbHtml, fbVisible, fbSuccess, fbFlash } = $props();
+  import { NOTES, SCALES } from '$lib/constants/music.js';
+  import { STRING_NAMES, scaleSequence } from '$lib/music/fretboard.js';
+  import { renderSeqFB } from './seqFretboard.js';
+  import { createHoldDetector } from './holdDetection.js';
+
+  let { item = null, recall = false, onComplete, onWrong, onInvalid, setMsg, showDetected } = $props();
+
+  let challenge = $state(null);
+  let noteIdx = $state(0);
+  let fbHtml = $state('');
+  let fbVisible = $state(false);
+  let fbSuccess = $state(false);
+  let fbFlash = $state(false);
+
+  const hold = createHoldDetector();
+
+  export function prepare(inner, isRecall) {
+    recall = isRecall;
+    hold.reset();
+    const ri = inner.rootIdx;
+    const root = NOTES[ri];
+    const scale = SCALES.find(sc => sc.id === inner.scaleId);
+    const startFret = inner.startFret;
+    let seq = scaleSequence(ri, scale.iv, startFret, startFret + 4);
+    if (seq.length < 5) { onInvalid(); return; }
+    if (inner.dir === 'updown') {
+      const desc = [...seq].reverse().slice(1);
+      seq = [...seq, ...desc];
+    }
+    challenge = { root, scale, seq, startFret };
+    noteIdx = 0;
+    fbVisible = !isRecall;
+    fbSuccess = false;
+    fbFlash = false;
+    fbHtml = renderSeqFB(seq, 0, startFret);
+    const t = seq[0];
+    setMsg(`Play ${root} ${scale.name}: start with ${t.note} (${STRING_NAMES[t.str]} fret ${t.fret})`, false);
+  }
+
+  export function handleDetection(note, cents, hz, semi) {
+    if (!challenge) return;
+    const target = challenge.seq[noteIdx];
+    const nm = note === target.note;
+    const midiOk = Math.abs(semi + 69 - target.midi) <= 1;
+    const ok = nm && midiOk;
+    showDetected(note, cents, hz, ok);
+    hold.check(ok, true, () => {
+      noteIdx++;
+      hold.resetAfterVoice();
+      if (noteIdx >= challenge.seq.length) {
+        fbHtml = renderSeqFB(challenge.seq, noteIdx, challenge.startFret);
+        fbSuccess = true;
+        fbFlash = true;
+        onComplete(40, 3);
+        setTimeout(() => { fbSuccess = false; fbFlash = false; }, 1200);
+      } else {
+        const t = challenge.seq[noteIdx];
+        setMsg(`Next: ${t.note} (${STRING_NAMES[t.str]} fret ${t.fret})`, false);
+        fbHtml = renderSeqFB(challenge.seq, noteIdx, challenge.startFret);
+      }
+    }, onWrong);
+  }
+
+  export function handleSilence() {
+    showDetected(null, 0, 0, false);
+    hold.reset();
+  }
 </script>
 
 <div class="nt-scale-section">

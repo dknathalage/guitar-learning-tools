@@ -1,5 +1,5 @@
 import { NOTES, SCALES } from '$lib/constants/music.js';
-import { NT_NATURAL, LANDMARKS, nearestLandmark, landmarkZone } from '$lib/music/fretboard.js';
+import { NATURAL_NOTES, LANDMARKS, nearestLandmark, landmarkZone } from '$lib/music/fretboard.js';
 
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
@@ -9,7 +9,7 @@ const ALL_SCALE_IDS = ['major', 'natural_min', 'maj_pent', 'min_pent'];
 export const scaleRunnerConfig = {
   itemDifficulty(item) {
     const sc = SCALE_COMPLEXITY[item.scaleId] || 0.3;
-    const rootAccidental = !NT_NATURAL.includes(NOTES[item.rootIdx]) ? 0.15 : 0;
+    const rootAccidental = !NATURAL_NOTES.includes(NOTES[item.rootIdx]) ? 0.15 : 0;
     const dirBonus = item.dir === 'updown' ? 0.2 : 0;
     return clamp(sc + rootAccidental + dirBonus, 0, 1);
   },

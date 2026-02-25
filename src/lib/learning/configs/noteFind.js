@@ -1,12 +1,12 @@
 import { NOTES } from '$lib/constants/music.js';
-import { NT_NATURAL, noteAt, BASE_MIDI, LANDMARKS, nearestLandmark, landmarkZone } from '$lib/music/fretboard.js';
+import { NATURAL_NOTES, noteAt, BASE_MIDI, LANDMARKS, nearestLandmark, landmarkZone } from '$lib/music/fretboard.js';
 
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
 export const noteFindConfig = {
   itemDifficulty(item) {
     const fretFactor = item.fret / 15;
-    const accidental = !NT_NATURAL.includes(item.note) ? 1 : 0;
+    const accidental = !NATURAL_NOTES.includes(item.note) ? 1 : 0;
     const landmark = LANDMARKS.includes(item.fret) ? 0 : 1;
     const innerStr = (item.str >= 1 && item.str <= 4) ? 1 : 0;
     return clamp(fretFactor * 0.5 + accidental * 0.2 + landmark * 0.05 + innerStr * 0.05, 0, 1);
@@ -21,7 +21,7 @@ export const noteFindConfig = {
       'str_' + item.str,
       'note_' + item.note,
       landmarkZone(item.fret),
-      NT_NATURAL.includes(item.note) ? 'natural' : 'accidental'
+      NATURAL_NOTES.includes(item.note) ? 'natural' : 'accidental'
     ];
     if (LANDMARKS.includes(item.fret)) clusters.push('landmark');
     return clusters;
@@ -71,9 +71,9 @@ export const noteFindConfig = {
         } else if (clusterId === 'landmark') {
           if (!LANDMARKS.includes(f)) continue;
         } else if (clusterId === 'natural') {
-          if (!NT_NATURAL.includes(n)) continue;
+          if (!NATURAL_NOTES.includes(n)) continue;
         } else if (clusterId === 'accidental') {
-          if (NT_NATURAL.includes(n)) continue;
+          if (NATURAL_NOTES.includes(n)) continue;
         }
 
         cands.push({ note: n, str: s, fret: f, midi: BASE_MIDI[s] + f });
@@ -144,7 +144,7 @@ export const noteFindConfig = {
       for (let f = Math.max(0, item.fret - 2); f <= Math.min(15, item.fret + 2); f++) {
         for (let s = 0; s < 6; s++) {
           const n = noteAt(s, f);
-          if (!NT_NATURAL.includes(n)) {
+          if (!NATURAL_NOTES.includes(n)) {
             cands.push({ note: n, str: s, fret: f, midi: BASE_MIDI[s] + f });
           }
         }

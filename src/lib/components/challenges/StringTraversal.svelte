@@ -1,5 +1,5 @@
 <script>
-  import { NT_STR_NAMES } from '$lib/music/fretboard.js';
+  import { STRING_NAMES } from '$lib/music/fretboard.js';
   let { travNote, travIdx, travDone, fbVisible, fbHtml, fbSuccess, fbFlash, allPosData } = $props();
 </script>
 
@@ -7,7 +7,7 @@
   <div class="nt-challenge-lbl">Play on every string</div>
   <div class="nt-challenge-note">{travNote ? travNote : '\u2014'}</div>
   <div class="nt-trav-dots">
-    {#each NT_STR_NAMES as name, s}
+    {#each STRING_NAMES as name, s}
       <div class="nt-trav-dot{travDone[s] ? ' done' : (s === travIdx && travNote ? ' active' : '')}">
         <span class="nt-trav-dot-lbl">{name}</span>
       </div>

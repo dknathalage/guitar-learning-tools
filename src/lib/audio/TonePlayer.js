@@ -1,7 +1,7 @@
 export class TonePlayer {
   constructor() {
     this.ctx = null;
-    this.nodes = [];
+    this.activeSets = new Set();
   }
 
   init() {
@@ -26,9 +26,10 @@ export class TonePlayer {
     gain.connect(this.ctx.destination);
     osc.start(t);
     osc.stop(t + duration);
-    this.nodes.push(osc, gain);
+    const nodeSet = new Set([osc, gain]);
+    this.activeSets.add(nodeSet);
     osc.onended = () => {
-      this.nodes = this.nodes.filter(n => n !== osc && n !== gain);
+      this.activeSets.delete(nodeSet);
     };
   }
 
@@ -48,11 +49,13 @@ export class TonePlayer {
   }
 
   stop() {
-    for (const n of this.nodes) {
-      try { if (n.stop) n.stop(); } catch {}
-      try { n.disconnect(); } catch {}
+    for (const nodeSet of this.activeSets) {
+      for (const n of nodeSet) {
+        try { if (n.stop) n.stop(); } catch {}
+        try { n.disconnect(); } catch {}
+      }
     }
-    this.nodes = [];
+    this.activeSets.clear();
     if (this.ctx) {
       this.ctx.close();
       this.ctx = null;

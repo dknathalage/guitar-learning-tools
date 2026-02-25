@@ -1,5 +1,5 @@
 import { NOTES } from '$lib/constants/music.js';
-import { STD_SHAPES, adaptShape, getBf } from '$lib/music/chords.js';
+import { STANDARD_SHAPES, adaptShapeToTuning, getBaseFret } from '$lib/music/chords.js';
 import { landmarkZone } from '$lib/music/fretboard.js';
 
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
@@ -20,9 +20,9 @@ export const chordPlayerConfig = {
   },
 
   itemClusters(item) {
-    const sh = STD_SHAPES.find(s => s.id === item.shapeId);
-    const adapted = adaptShape(sh);
-    const bf = getBf(adapted, item.rootIdx);
+    const sh = STANDARD_SHAPES.find(s => s.id === item.shapeId);
+    const adapted = adaptShapeToTuning(sh);
+    const bf = getBaseFret(adapted, item.rootIdx);
     return [
       'shape_' + item.shapeId,
       'type_' + item.typeId,
@@ -44,7 +44,7 @@ export const chordPlayerConfig = {
   },
 
   genRandom(lastItem) {
-    const sh = STD_SHAPES[Math.floor(Math.random() * STD_SHAPES.length)];
+    const sh = STANDARD_SHAPES[Math.floor(Math.random() * STANDARD_SHAPES.length)];
     const typeId = ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
     const rootIdx = Math.floor(Math.random() * 12);
     return { shapeId: sh.id, typeId, rootIdx };
@@ -60,7 +60,7 @@ export const chordPlayerConfig = {
 
     if (clusterId.startsWith('type_')) {
       const typeId = clusterId.slice(5);
-      const sh = STD_SHAPES[Math.floor(Math.random() * STD_SHAPES.length)];
+      const sh = STANDARD_SHAPES[Math.floor(Math.random() * STANDARD_SHAPES.length)];
       const rootIdx = Math.floor(Math.random() * 12);
       return { shapeId: sh.id, typeId, rootIdx };
     }
@@ -69,14 +69,14 @@ export const chordPlayerConfig = {
       const rootName = clusterId.slice(5);
       const rootIdx = NOTES.indexOf(rootName);
       if (rootIdx >= 0) {
-        const sh = STD_SHAPES[Math.floor(Math.random() * STD_SHAPES.length)];
+        const sh = STANDARD_SHAPES[Math.floor(Math.random() * STANDARD_SHAPES.length)];
         const typeId = ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
         return { shapeId: sh.id, typeId, rootIdx };
       }
     }
 
     if (clusterId.startsWith('zone_')) {
-      const sh = STD_SHAPES[Math.floor(Math.random() * STD_SHAPES.length)];
+      const sh = STANDARD_SHAPES[Math.floor(Math.random() * STANDARD_SHAPES.length)];
       const typeId = ALL_TYPES[Math.floor(Math.random() * ALL_TYPES.length)];
       const rootIdx = Math.floor(Math.random() * 12);
       return { shapeId: sh.id, typeId, rootIdx };
@@ -95,7 +95,7 @@ export const chordPlayerConfig = {
     if (!weakCluster) return [];
 
     if (weakCluster.startsWith('shape_')) {
-      const allShapeIds = STD_SHAPES.map(s => s.id);
+      const allShapeIds = STANDARD_SHAPES.map(s => s.id);
       const otherShapes = allShapeIds.filter(id => id !== item.shapeId);
       if (otherShapes.length > 0) {
         const newShapeId = otherShapes[Math.floor(Math.random() * otherShapes.length)];

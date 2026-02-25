@@ -1,5 +1,5 @@
 import { NOTES, CHORD_TYPES } from '$lib/constants/music.js';
-import { NT_NATURAL, noteAt, BASE_MIDI, LANDMARKS, nearestLandmark, landmarkZone } from '$lib/music/fretboard.js';
+import { NATURAL_NOTES, noteAt, BASE_MIDI, LANDMARKS, nearestLandmark, landmarkZone } from '$lib/music/fretboard.js';
 
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
@@ -42,7 +42,7 @@ export const chordToneConfig = {
     const cc = CHORD_COMPLEXITY[item.ctId] || 0.3;
     const tc = TONE_COMPLEXITY[item.toneLabel] || 0.2;
     const fretFactor = item.pos.fret / 15;
-    const accidental = !NT_NATURAL.includes(item.root) ? 1 : 0;
+    const accidental = !NATURAL_NOTES.includes(item.root) ? 1 : 0;
     return clamp(cc + tc + fretFactor * 0.1 + accidental * 0.1, 0, 1);
   },
 

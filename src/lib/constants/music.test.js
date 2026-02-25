@@ -81,8 +81,8 @@ describe('INTERVALS', () => {
 });
 
 describe('CHORD_TYPES', () => {
-  it('has 9 types', () => {
-    expect(CHORD_TYPES).toHaveLength(9);
+  it('has 12 types', () => {
+    expect(CHORD_TYPES).toHaveLength(12);
   });
 
   it('all start on root 0', () => {

@@ -1,5 +1,5 @@
 import { NOTES } from '$lib/constants/music.js';
-import { NT_NATURAL, fretForNote, landmarkZone } from '$lib/music/fretboard.js';
+import { NATURAL_NOTES, fretForNote, landmarkZone } from '$lib/music/fretboard.js';
 
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
@@ -26,7 +26,7 @@ function chromaticNeighbor(note, offset) {
 
 export const stringTraversalConfig = {
   itemDifficulty(item) {
-    const accidental = !NT_NATURAL.includes(item.note) ? 1 : 0;
+    const accidental = !NATURAL_NOTES.includes(item.note) ? 1 : 0;
     const avgFret = item.frets.reduce((s, f) => s + f, 0) / item.frets.length;
     const avgFretDist = avgFret / 15;
     const hasHighFret = item.frets.some(f => f >= 10) ? 1 : 0;
@@ -41,7 +41,7 @@ export const stringTraversalConfig = {
     const loFret = Math.min(...item.frets);
     return [
       'note_' + item.note,
-      NT_NATURAL.includes(item.note) ? 'natural' : 'accidental',
+      NATURAL_NOTES.includes(item.note) ? 'natural' : 'accidental',
       landmarkZone(loFret)
     ];
   },

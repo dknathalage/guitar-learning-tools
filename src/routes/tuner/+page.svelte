@@ -1,12 +1,11 @@
 <script>
   import { onMount, onDestroy } from 'svelte';
   import { base } from '$app/paths';
-  import { NOTES, A4, TUNINGS } from '$lib/constants/music.js';
+  import { NOTES, A4, TUNINGS, BASE_MIDI } from '$lib/constants/music.js';
   import { freqToNote, yinDetect, rms } from '$lib/audio/pitch.js';
 
   const LS_KEY = 'guitar-tuner-custom-tunings';
-  const STD_MIDI = [40, 45, 50, 55, 59, 64];
-  const STD_SEMI = [4, 9, 2, 7, 11, 4];
+  const STD_SEMI = TUNINGS.std.tuning;
 
   // ═══ Reactive state ═══
   let running = $state(false);
@@ -55,7 +54,7 @@
     for (let i = 0; i < 6; i++) {
       const diff = ((tun[i] - STD_SEMI[i]) + 12) % 12;
       const semiOffset = diff <= 6 ? diff : diff - 12;
-      const midi = STD_MIDI[i] + semiOffset;
+      const midi = BASE_MIDI[i] + semiOffset;
       freqs.push(A4 * Math.pow(2, (midi - 69) / 12));
     }
     return freqs;

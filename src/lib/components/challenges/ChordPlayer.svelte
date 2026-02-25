@@ -1,6 +1,74 @@
 <script>
-  import { NT_STR_NAMES } from '$lib/music/fretboard.js';
-  let { challenge, voiceIdx, voiceDone, fbSuccess, fbFlash, recall = false } = $props();
+  import { NOTES } from '$lib/constants/music.js';
+  import { STRING_NAMES, BASE_MIDI } from '$lib/music/fretboard.js';
+  import { CHORD_CONFIG, STANDARD_SHAPES, adaptShapeToTuning, resolve, renderDiagram, SHAPE_COLORS } from '$lib/music/chords.js';
+  import { createHoldDetector } from './holdDetection.js';
+
+  let { item = null, recall = false, onComplete, onWrong, onInvalid, setMsg, showDetected } = $props();
+
+  let challenge = $state(null);
+  let voiceIdx = $state(0);
+  let voiceDone = $state([]);
+  let fbSuccess = $state(false);
+  let fbFlash = $state(false);
+
+  const hold = createHoldDetector();
+
+  export function prepare(inner, isRecall) {
+    recall = isRecall;
+    hold.reset();
+    const { shapeId, typeId, rootIdx } = inner;
+    const sh = STANDARD_SHAPES.find(s => s.id === shapeId);
+    const ct = CHORD_CONFIG.chordTypes.find(c => c.id === typeId);
+    const root = NOTES[rootIdx];
+    const adapted = adaptShapeToTuning(sh);
+    const r = resolve(adapted, rootIdx, ct.iv);
+    if (r.voices.length < 3) { onInvalid(); return; }
+    const sortedVoices = [...r.voices].sort((a, b) => a.str - b.str);
+    const color = SHAPE_COLORS[sh.id] || '#58A6FF';
+    const dHtml = isRecall ? '' : renderDiagram(r, color);
+    const chordName = root + (ct.sym || '');
+    challenge = { root, chordType: ct, shape: sh, resolved: r, sortedVoices, diagramHtml: dHtml, chordName, color, shapeName: sh.label };
+    voiceIdx = 0;
+    voiceDone = sortedVoices.map(() => false);
+    fbSuccess = false;
+    fbFlash = false;
+    const firstVoice = sortedVoices[0];
+    setMsg(`Play ${firstVoice.note} on ${STRING_NAMES[firstVoice.str]}`, false);
+  }
+
+  export function handleDetection(note, cents, hz, semi) {
+    if (!challenge) return;
+    const voice = challenge.sortedVoices[voiceIdx];
+    if (!voice) return;
+    const expMidi = BASE_MIDI[voice.str] + challenge.resolved.baseFret + voice.fretOffset;
+    const nm = note === voice.note;
+    const midiOk = Math.abs(semi + 69 - expMidi) <= 1;
+    const ok = nm && midiOk;
+    showDetected(note, cents, hz, ok);
+    if (nm && !midiOk) { setMsg(`Right note, play on ${STRING_NAMES[voice.str]} string!`, true); }
+    hold.check(ok, true, () => {
+      voiceDone[voiceIdx] = true;
+      voiceDone = [...voiceDone];
+      fbSuccess = true;
+      fbFlash = true;
+      setTimeout(() => { fbSuccess = false; fbFlash = false; }, 600);
+      voiceIdx++;
+      hold.resetAfterVoice();
+      if (voiceIdx >= challenge.sortedVoices.length) {
+        onComplete(30, 3);
+        setTimeout(() => { fbSuccess = false; fbFlash = false; }, 1200);
+      } else {
+        const nextVoice = challenge.sortedVoices[voiceIdx];
+        setMsg(`Now play ${nextVoice.note} on ${STRING_NAMES[nextVoice.str]}`, false);
+      }
+    }, onWrong);
+  }
+
+  export function handleSilence() {
+    showDetected(null, 0, 0, false);
+    hold.reset();
+  }
 </script>
 
 <div class="nt-chord-section">
@@ -12,7 +80,7 @@
 <div class="nt-trav-dots">
   {#each voiceDone as done, i}
     <div class="nt-trav-dot{done ? ' done' : (i === voiceIdx && challenge ? ' active' : '')}">
-      <span class="nt-trav-dot-lbl">{challenge ? NT_STR_NAMES[challenge.sortedVoices[i].str] : ''}</span>
+      <span class="nt-trav-dot-lbl">{challenge ? STRING_NAMES[challenge.sortedVoices[i].str] : ''}</span>
     </div>
   {/each}
 </div>

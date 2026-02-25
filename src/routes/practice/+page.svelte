@@ -2,26 +2,21 @@
   import { onDestroy } from 'svelte';
   import { base } from '$app/paths';
   import { saveExercise } from '$lib/progress.js';
-  import { NOTES, INTERVALS, CHORD_TYPES, SCALES, MODES } from '$lib/constants/music.js';
   import { AudioManager } from '$lib/audio/AudioManager.js';
-  import { NT_STR_NAMES, BASE_MIDI, noteAt, fretForNote, renderFB, fbDims, scaleSequence, FB, drawBoard } from '$lib/music/fretboard.js';
-  import { CFG, STD_SHAPES, adaptShape, getBf, resolve, renderDiagram, STD_COLORS } from '$lib/music/chords.js';
   import { LearningEngine } from '$lib/learning/engine.js';
   import { unifiedConfig, TYPES } from '$lib/learning/configs/unified.js';
   import { migrateToUnified } from '$lib/learning/migration.js';
+  import { addToast } from '$lib/stores/notifications.svelte.js';
   import { renderRing } from '$lib/skilltree.js';
   import LearningDashboard from '$lib/components/LearningDashboard.svelte';
   import PitchDisplay from '$lib/components/challenges/PitchDisplay.svelte';
   import NoteFind from '$lib/components/challenges/NoteFind.svelte';
-
   import IntervalTrainer from '$lib/components/challenges/IntervalTrainer.svelte';
-
   import ChordPlayer from '$lib/components/challenges/ChordPlayer.svelte';
   import ScaleRunner from '$lib/components/challenges/ScaleRunner.svelte';
   import ModeTrainer from '$lib/components/challenges/ModeTrainer.svelte';
   import ChordTransition from '$lib/components/challenges/ChordTransition.svelte';
 
-  // Run migration on mount
   migrateToUnified();
 
   let qStartTime = 0;
@@ -33,58 +28,10 @@
   let best = $state(0);
   let correct = $state(0);
   let attempts = $state(0);
-  // Current challenge
   let challengeType = $state(null);
   let curItem = $state(null);
   let recall = $state(false);
-
-  // NoteFind state
-  let nfTarget = $state(null);
-  let nfFbHtml = $state('');
-  let nfFbSuccess = $state(false);
-  let nfFbFlash = $state(false);
-
-  // IntervalTrainer state
-  let ivRef = $state(null);
-  let ivInterval = $state(null);
-  let ivTarget = $state(null);
-  let ivTargetDisplay = $state('\u2014');
-  let ivTargetHidden = $state(false);
-  let ivFbHtml = $state('');
-  let ivFbSuccess = $state(false);
-  let ivFbFlash = $state(false);
-
-  // ChordPlayer state
-  let cpChallenge = $state(null);
-  let cpVoiceIdx = $state(0);
-  let cpVoiceDone = $state([]);
-  let cpFbSuccess = $state(false);
-  let cpFbFlash = $state(false);
-
-  // ScaleRunner state
-  let srChallenge = $state(null);
-  let srNoteIdx = $state(0);
-  let srFbHtml = $state('');
-  let srFbVisible = $state(false);
-  let srFbSuccess = $state(false);
-  let srFbFlash = $state(false);
-
-  // ModeTrainer state
-  let mtChallenge = $state(null);
-  let mtNoteIdx = $state(0);
-  let mtFbHtml = $state('');
-  let mtFbVisible = $state(false);
-  let mtFbSuccess = $state(false);
-  let mtFbFlash = $state(false);
-
-  // ChordTransition state
-  let cxFromChallenge = $state(null);
-  let cxToChallenge = $state(null);
-  let cxPhase = $state('from');
-  let cxVoiceIdx = $state(0);
-  let cxVoiceDone = $state([]);
-  let cxFbSuccess = $state(false);
-  let cxFbFlash = $state(false);
+  let lastDetected = '';
 
   // Pitch display state
   let detectedNote = $state('\u2014');
@@ -97,15 +44,12 @@
   let msgText = $state('Press Start to begin');
   let msgErr = $state(false);
 
-  // Hold detection
-  let holdStart = 0;
-  let wrongHold = 0;
-  let wrongCd = 0;
-  let lastDetected = '';
+  // Challenge component ref (whichever is currently active)
+  let challengeRef = $state(null);
 
   // Audio & Engine
   const audio = new AudioManager();
-  let engine = new LearningEngine(unifiedConfig, 'practice');
+  let engine = new LearningEngine(unifiedConfig, 'practice', { onError: (msg) => addToast(msg) });
 
   // Mastery state for idle view
   let mastery = $state(null);
@@ -114,7 +58,6 @@
     mastery = engine.getMastery();
   }
 
-  // Compute per-type mastery from engine mastery
   function typeMastery(m) {
     if (!m) return TYPES.map(t => ({ ...t, avgPL: 0, count: 0 }));
     return TYPES.map(t => {
@@ -128,27 +71,23 @@
 
   // --- Derived ---
   let accuracy = $derived(attempts > 0 ? Math.round(correct / attempts * 100) + '%' : '\u2014');
-  let accuracyNum = $derived(attempts > 0 ? correct / attempts : 0);
   let showStart = $derived(phase === 'idle');
   let showActive = $derived(phase !== 'idle');
   let showReset = $derived(score > 0 || attempts > 0 || engine.totalAttempts > 0);
 
-  // --- Stats-for-nerds: current item stats ---
+  // --- Stats-for-nerds ---
   let curItemKey = $derived(curItem ? engine.config.itemKey(curItem) : null);
   let curItemStats = $derived(curItemKey ? engine.getItemStats(curItemKey) : null);
 
-  // Stats-for-nerds: expand/collapse state
   let sessionExpanded = $state(false);
   let engineExpanded = $state(false);
   let coverageExpanded = $state(false);
 
-  // Session mastery (refreshed after each answer)
   let sessionMastery = $state(null);
   function refreshSessionMastery() {
     sessionMastery = engine.getMastery();
   }
 
-  // Helper: format values for stats bar
   function sfnPlColor(pL) {
     if (pL >= 0.95) return '#4ECB71';
     if (pL >= 0.5) return '#F0A030';
@@ -164,15 +103,9 @@
     if (r <= 1.3) return '#F0A030';
     return '#FF6B6B';
   }
-  function sfnFatigueColor(f) {
-    if (!f) return '#4ECB71';
-    return '#FF6B6B';
-  }
-  function sfnFatigueLabel(f) {
-    return f ? 'Fatigued' : 'Fresh';
-  }
+  function sfnFatigueColor(f) { return f ? '#FF6B6B' : '#4ECB71'; }
+  function sfnFatigueLabel(f) { return f ? 'Fatigued' : 'Fresh'; }
 
-  // Coverage heatmap SVG
   function renderCoverageHeatmap(coverage) {
     if (!coverage) return '';
     const zones = ['zone_0', 'zone_3', 'zone_5', 'zone_7', 'zone_9', 'zone_12'];
@@ -181,16 +114,13 @@
     const w = padL + zones.length * (cellW + gap);
     const h = padT + 6 * (cellH + gap);
     let svg = `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
-    // Zone labels
     for (let z = 0; z < zones.length; z++) {
       svg += `<text x="${padL + z * (cellW + gap) + cellW / 2}" y="10" text-anchor="middle" fill="var(--mt)" font-size="8" font-family="JetBrains Mono">${zoneLabels[z]}</text>`;
     }
-    // String labels
     const strNames = ['e','B','G','D','A','E'];
     for (let s = 0; s < 6; s++) {
       svg += `<text x="${padL - 6}" y="${padT + s * (cellH + gap) + cellH / 2 + 3}" text-anchor="end" fill="var(--mt)" font-size="8" font-family="JetBrains Mono">${strNames[s]}</text>`;
     }
-    // Cells
     for (let s = 0; s < 6; s++) {
       for (let z = 0; z < zones.length; z++) {
         const cellKey = `str_${s}:${zones[z]}`;
@@ -213,7 +143,6 @@
     return svg;
   }
 
-  // Sparkline for theta history
   function renderThetaSparkline(history) {
     if (!history || history.length < 2) return '';
     const w = 80, h = 20, pad = 2;
@@ -229,7 +158,7 @@
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg"><polyline points="${pts}" fill="none" stroke="var(--ac)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
   }
 
-  // --- Detected display ---
+  // --- Shared callbacks passed to challenge components ---
   function showDetected(note, cents, hz, isCorrect) {
     if (!note) {
       detectedNote = '\u2014'; detectedClass = ''; centsLbl = ''; centsLeft = '50%'; hzText = '';
@@ -242,388 +171,82 @@
     hzText = hz.toFixed(1) + ' Hz';
   }
 
-  // --- Scoring ---
-  function scoreCorrect(b, mult) {
+  function setMsg(text, isErr) {
+    msgText = text;
+    msgErr = isErr;
+  }
+
+  function onChallengeComplete(basePts, mult) {
     phase = 'success'; correct++; attempts++; streak++;
     if (streak > best) best = streak;
-    let pts = b + streak * mult;
+    let pts = basePts + streak * mult;
     if (streak === 5) pts += 20;
     if (streak === 10) pts += 50;
     score += pts;
+    engine.report(curItem, true, performance.now() - qStartTime);
+    msgText = `+${pts} points!`; msgErr = false;
     refreshSessionMastery();
-    return pts;
+    setTimeout(() => { if (phase === 'success') nextChallenge(); }, 1200);
   }
 
-  function onWrong() {
+  function onChallengeWrong() {
     streak = 0; attempts++;
     const pen = Math.min(score, 5);
     score -= pen;
     engine.report(curItem, false, undefined, { detected: lastDetected });
-    wrongCd = performance.now(); wrongHold = 0;
     msgText = pen > 0 ? '\u2212' + pen + ' points' : 'Wrong!';
     msgErr = true;
     refreshSessionMastery();
   }
 
-  function checkHold(isCorrect, onConfirm) {
-    if (isCorrect && phase === 'listening') {
-      wrongHold = 0;
-      if (!holdStart) holdStart = performance.now();
-      if (performance.now() - holdStart >= 300) { onConfirm(); return; }
-    } else {
-      holdStart = 0;
-      if (!isCorrect && phase === 'listening') {
-        if (!wrongHold) wrongHold = performance.now();
-        const now = performance.now();
-        if (now - wrongHold >= 600 && now - wrongCd >= 2000) onWrong();
-      } else {
-        wrongHold = 0;
-      }
-    }
+  function onChallengeInvalid() {
+    nextChallenge();
   }
 
-  // --- Scale/Mode fretboard renderer ---
-  function renderSeqFB(seq, currentIdx, startFret) {
-    const center = startFret + 2;
-    let sf = Math.max(0, center - Math.floor(FB.FRETS / 2));
-    if (sf + FB.FRETS > 22) sf = Math.max(0, 22 - FB.FRETS);
-    return drawBoard(sf, ({ FL, TOP, SH, FW, DOT, sf, FRETS }) => {
-      const uniqueNotes = [...new Map(seq.map(n => [`${n.str}-${n.fret}`, n])).values()];
-      let d = '';
-      for (const n of uniqueNotes) {
-        const tfr = n.fret - sf;
-        if (tfr < 0 || tfr > FRETS) continue;
-        const cy = TOP + (5 - n.str) * SH + SH / 2;
-        const cx = n.fret === 0 ? FL + DOT * 0.2 : FL + (tfr - 1) * FW + FW / 2;
-        const seqIdx = seq.findIndex(sn => sn.str === n.str && sn.fret === n.fret);
-        const lastIdx = seq.findLastIndex(sn => sn.str === n.str && sn.fret === n.fret);
-        let col, opacity;
-        if (seqIdx <= currentIdx && lastIdx <= currentIdx) { col = '#4ECB71'; opacity = 0.4; }
-        else if (seqIdx === currentIdx || lastIdx === currentIdx) { col = '#4ECB71'; opacity = 1.0; }
-        else { col = '#58A6FF'; opacity = 0.7; }
-        d += `<circle cx="${cx}" cy="${cy}" r="${DOT * 1.3}" fill="${col}" opacity="${opacity * 0.15}"/>`;
-        d += `<circle cx="${cx}" cy="${cy}" r="${DOT}" fill="${col}" opacity="${opacity}"/>`;
-        const fs = n.note.length > 1 ? DOT * 0.8 : DOT;
-        d += `<text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" fill="#fff" font-size="${fs}" font-weight="bold" font-family="JetBrains Mono">${n.note}</text>`;
-      }
-      return d;
-    });
-  }
-
-  // --- Challenge preparation ---
+  // --- Challenge lifecycle ---
   function nextChallenge() {
-    holdStart = 0; phase = 'listening';
+    phase = 'listening';
     showDetected(null);
     const item = engine.next();
     curItem = item;
     challengeType = item._type;
     recall = !!item._recall;
-    const inner = item._inner;
     qStartTime = performance.now();
-
-    switch (challengeType) {
-      case 'nf': prepareNoteFind(inner); break;
-      case 'iv': prepareInterval(inner); break;
-      case 'cp': prepareChordPlayer(inner); break;
-      case 'sr': prepareScaleRunner(inner); break;
-      case 'mt': prepareModeTrainer(inner); break;
-      case 'cx': prepareChordTransition(inner); break;
-    }
-
+    // The component will be mounted/updated by Svelte reactivity.
+    // We need to call prepare on the next tick after the component ref is set.
+    requestAnimationFrame(() => {
+      challengeRef?.prepare(item._inner, recall);
+    });
   }
 
-  // --- Per-type preparation ---
-  function prepareNoteFind(inner) {
-    nfTarget = inner;
-    if (recall) {
-      const _d = fbDims();
-      nfFbHtml = `<svg viewBox="0 0 ${_d.W} ${_d.H}" xmlns="http://www.w3.org/2000/svg"><text x="${_d.W/2}" y="${_d.H/2}" text-anchor="middle" dominant-baseline="central" fill="#222" font-size="60" font-family="Outfit" font-weight="900">?</text></svg>`;
-    } else {
-      nfFbHtml = renderFB(inner, null, false);
-    }
-    nfFbSuccess = false; nfFbFlash = false;
-    msgText = 'Listening...'; msgErr = false;
-  }
-
-  function prepareInterval(inner) {
-    ivRef = inner.ref;
-    ivInterval = inner.interval;
-    ivTarget = inner.targetNote;
-    if (recall) {
-      ivTargetDisplay = '?'; ivTargetHidden = true;
-      const _d = fbDims();
-      ivFbHtml = `<svg viewBox="0 0 ${_d.W} ${_d.H}" xmlns="http://www.w3.org/2000/svg"><text x="${_d.W/2}" y="${_d.H/2}" text-anchor="middle" dominant-baseline="central" fill="#222" font-size="60" font-family="Outfit" font-weight="900">?</text></svg>`;
-    } else {
-      ivTargetDisplay = inner.targetNote; ivTargetHidden = false;
-      ivFbHtml = renderFB(inner.ref, null, false);
-    }
-    ivFbSuccess = false; ivFbFlash = false;
-    msgText = 'Listening...'; msgErr = false;
-  }
-
-  function prepareChordPlayer(inner) {
-    const { shapeId, typeId, rootIdx } = inner;
-    const sh = STD_SHAPES.find(s => s.id === shapeId);
-    const ct = CFG.chordTypes.find(c => c.id === typeId);
-    const root = NOTES[rootIdx];
-    const adapted = adaptShape(sh);
-    const r = resolve(adapted, rootIdx, ct.iv);
-    if (r.voices.length < 3) { nextChallenge(); return; }
-    const sortedVoices = [...r.voices].sort((a, b) => a.str - b.str);
-    const color = STD_COLORS[sh.id] || '#58A6FF';
-    const dHtml = renderDiagram(r, color);
-    const chordName = root + (ct.sym || '');
-    cpChallenge = { root, chordType: ct, shape: sh, resolved: r, sortedVoices, diagramHtml: recall ? '' : dHtml, chordName, color, shapeName: sh.label };
-    cpVoiceIdx = 0;
-    cpVoiceDone = sortedVoices.map(() => false);
-    cpFbSuccess = false; cpFbFlash = false;
-    const firstVoice = sortedVoices[0];
-    msgText = `Play ${firstVoice.note} on ${NT_STR_NAMES[firstVoice.str]}`; msgErr = false;
-  }
-
-  function prepareScaleRunner(inner) {
-    const ri = inner.rootIdx;
-    const root = NOTES[ri];
-    const scale = SCALES.find(sc => sc.id === inner.scaleId);
-    const startFret = inner.startFret;
-    let seq = scaleSequence(ri, scale.iv, startFret, startFret + 4);
-    if (seq.length < 5) { nextChallenge(); return; }
-    if (inner.dir === 'updown') {
-      const desc = [...seq].reverse().slice(1);
-      seq = [...seq, ...desc];
-    }
-    srChallenge = { root, scale, seq, startFret };
-    srNoteIdx = 0;
-    srFbVisible = !recall;
-    srFbSuccess = false; srFbFlash = false;
-    srFbHtml = renderSeqFB(seq, 0, startFret);
-    const t = seq[0];
-    msgText = `Play ${root} ${scale.name}: start with ${t.note} (${NT_STR_NAMES[t.str]} fret ${t.fret})`; msgErr = false;
-  }
-
-  function prepareModeTrainer(inner) {
-    const ri = inner.rootIdx;
-    const root = NOTES[ri];
-    const mode = MODES.find(m => m.id === inner.modeId);
-    const startFret = inner.startFret;
-    let seq = scaleSequence(ri, mode.iv, startFret, startFret + 4);
-    if (seq.length < 5) { nextChallenge(); return; }
-    if (inner.dir === 'updown') {
-      const desc = [...seq].reverse().slice(1);
-      seq = [...seq, ...desc];
-    }
-    mtChallenge = { root, mode, seq, startFret };
-    mtNoteIdx = 0;
-    mtFbVisible = !recall;
-    mtFbSuccess = false; mtFbFlash = false;
-    mtFbHtml = renderSeqFB(seq, 0, startFret);
-    const t = seq[0];
-    msgText = `Play ${root} ${mode.name}: start with ${t.note} (${NT_STR_NAMES[t.str]} fret ${t.fret})`; msgErr = false;
-  }
-
-  function prepareChordTransition(inner) {
-    const { fromShapeId, fromTypeId, fromRootIdx, toShapeId, toTypeId, toRootIdx } = inner;
-
-    function resolveChord(shapeId, typeId, rootIdx) {
-      const sh = STD_SHAPES.find(s => s.id === shapeId);
-      const ct = CFG.chordTypes.find(c => c.id === typeId);
-      const root = NOTES[rootIdx];
-      const adapted = adaptShape(sh);
-      const r = resolve(adapted, rootIdx, ct.iv);
-      if (r.voices.length < 3) return null;
-      const sortedVoices = [...r.voices].sort((a, b) => a.str - b.str);
-      const color = STD_COLORS[sh.id] || '#58A6FF';
-      const dHtml = recall ? '' : renderDiagram(r, color);
-      const chordName = root + (ct.sym || '');
-      return { root, chordType: ct, shape: sh, resolved: r, sortedVoices, diagramHtml: dHtml, chordName, color, shapeName: sh.label };
-    }
-
-    const from = resolveChord(fromShapeId, fromTypeId, fromRootIdx);
-    const to = resolveChord(toShapeId, toTypeId, toRootIdx);
-    if (!from || !to) { nextChallenge(); return; }
-
-    cxFromChallenge = from;
-    cxToChallenge = to;
-    cxPhase = 'from';
-    cxVoiceIdx = 0;
-    cxVoiceDone = from.sortedVoices.map(() => false);
-    cxFbSuccess = false; cxFbFlash = false;
-    const firstVoice = from.sortedVoices[0];
-    msgText = `Play ${from.chordName}: ${firstVoice.note} on ${NT_STR_NAMES[firstVoice.str]}`; msgErr = false;
-  }
-
-  // --- Detection dispatch ---
-  function onDetect(note, cents, hz, semi) {
+  // --- AudioManager event handlers ---
+  function handleDetect(e) {
+    const { note, cents, hz, semitones } = e.detail;
     lastDetected = note || '';
-    switch (challengeType) {
-      case 'nf': detectNoteFind(note, cents, hz, semi); break;
-      case 'iv': detectInterval(note, cents, hz, semi); break;
-      case 'cp': detectChordPlayer(note, cents, hz, semi); break;
-      case 'sr': detectScaleRunner(note, cents, hz, semi); break;
-      case 'mt': detectModeTrainer(note, cents, hz, semi); break;
-      case 'cx': detectChordTransition(note, cents, hz, semi); break;
-    }
+    if (phase !== 'listening') return;
+    challengeRef?.handleDetection(note, cents, hz, semitones);
   }
 
-  // --- Per-type detection ---
-  function detectNoteFind(note, cents, hz, semi) {
-    const nm = nfTarget && note === nfTarget.note;
-    const midiDiff = nfTarget ? Math.abs((semi+69) - nfTarget.midi) : 0;
-    const octOk = !recall || !nfTarget || (midiDiff % 12) <= 1 || (midiDiff % 12) >= 11;
-    const ok = nm && octOk;
-    showDetected(note, cents, hz, ok);
-    if (nm && !octOk && phase === 'listening') { msgText = 'Right note, wrong string!'; msgErr = true; }
-    checkHold(ok, () => {
-      const pts = scoreCorrect(10, 2);
-      engine.report(curItem, true, performance.now() - qStartTime);
-      nfFbHtml = renderFB(nfTarget, null, true);
-      nfFbSuccess = true; nfFbFlash = true;
-      msgText = `+${pts} points!`; msgErr = false;
-      setTimeout(() => { nfFbSuccess = false; nfFbFlash = false; if (phase === 'success') nextChallenge(); }, recall ? 1200 : 800);
-    });
-  }
-
-  function detectInterval(note, cents, hz, semi) {
-    const ok = note === ivTarget;
-    showDetected(note, cents, hz, ok);
-    checkHold(ok, () => {
-      const pts = scoreCorrect(10, 2);
-      engine.report(curItem, true, performance.now() - qStartTime);
-      ivTargetDisplay = ivTarget; ivTargetHidden = false;
-      ivFbHtml = renderFB(ivRef, null, true);
-      ivFbSuccess = true; ivFbFlash = true;
-      msgText = `+${pts} points!`; msgErr = false;
-      setTimeout(() => { ivFbSuccess = false; ivFbFlash = false; if (phase === 'success') nextChallenge(); }, recall ? 1200 : 800);
-    });
-  }
-
-  function detectChordPlayer(note, cents, hz, semi) {
-    if (!cpChallenge) return;
-    const voice = cpChallenge.sortedVoices[cpVoiceIdx];
-    if (!voice) return;
-    const expMidi = BASE_MIDI[voice.str] + cpChallenge.resolved.bf + voice.fo;
-    const nm = note === voice.note;
-    const midiOk = Math.abs(semi + 69 - expMidi) <= 1;
-    const ok = nm && midiOk;
-    showDetected(note, cents, hz, ok);
-    if (nm && !midiOk && phase === 'listening') { msgText = `Right note, play on ${NT_STR_NAMES[voice.str]} string!`; msgErr = true; }
-    checkHold(ok, () => {
-      cpVoiceDone[cpVoiceIdx] = true; cpVoiceDone = [...cpVoiceDone];
-      cpFbSuccess = true; cpFbFlash = true;
-      setTimeout(() => { cpFbSuccess = false; cpFbFlash = false; }, 600);
-      cpVoiceIdx++; holdStart = 0;
-      if (cpVoiceIdx >= cpChallenge.sortedVoices.length) {
-        engine.report(curItem, true, performance.now() - qStartTime);
-        const pts = scoreCorrect(30, 3);
-        msgText = `+${pts} points! All voices complete!`; msgErr = false;
-        setTimeout(() => { cpFbSuccess = false; cpFbFlash = false; if (phase === 'success') nextChallenge(); }, 1200);
-      } else {
-        const nextVoice = cpChallenge.sortedVoices[cpVoiceIdx];
-        msgText = `Now play ${nextVoice.note} on ${NT_STR_NAMES[nextVoice.str]}`; msgErr = false;
-      }
-    });
-  }
-
-  function detectScaleRunner(note, cents, hz, semi) {
-    if (!srChallenge || phase !== 'listening') return;
-    const target = srChallenge.seq[srNoteIdx];
-    const nm = note === target.note;
-    const midiOk = Math.abs(semi + 69 - target.midi) <= 1;
-    const ok = nm && midiOk;
-    showDetected(note, cents, hz, ok);
-    checkHold(ok, () => {
-      srNoteIdx++; holdStart = 0;
-      if (srNoteIdx >= srChallenge.seq.length) {
-        engine.report(curItem, true, performance.now() - qStartTime);
-        const pts = scoreCorrect(40, 3);
-        msgText = `+${pts} points! Scale complete!`; msgErr = false;
-        srFbHtml = renderSeqFB(srChallenge.seq, srNoteIdx, srChallenge.startFret);
-        srFbSuccess = true; srFbFlash = true;
-        setTimeout(() => { srFbSuccess = false; srFbFlash = false; if (phase === 'success') nextChallenge(); }, 1200);
-      } else {
-        const t = srChallenge.seq[srNoteIdx];
-        msgText = `Next: ${t.note} (${NT_STR_NAMES[t.str]} fret ${t.fret})`; msgErr = false;
-        srFbHtml = renderSeqFB(srChallenge.seq, srNoteIdx, srChallenge.startFret);
-      }
-    });
-  }
-
-  function detectModeTrainer(note, cents, hz, semi) {
-    if (!mtChallenge || phase !== 'listening') return;
-    const target = mtChallenge.seq[mtNoteIdx];
-    const nm = note === target.note;
-    const midiOk = Math.abs(semi + 69 - target.midi) <= 1;
-    const ok = nm && midiOk;
-    showDetected(note, cents, hz, ok);
-    checkHold(ok, () => {
-      mtNoteIdx++; holdStart = 0;
-      if (mtNoteIdx >= mtChallenge.seq.length) {
-        engine.report(curItem, true, performance.now() - qStartTime);
-        const pts = scoreCorrect(40, 3);
-        msgText = `+${pts} points! Mode complete!`; msgErr = false;
-        mtFbHtml = renderSeqFB(mtChallenge.seq, mtNoteIdx, mtChallenge.startFret);
-        mtFbSuccess = true; mtFbFlash = true;
-        setTimeout(() => { mtFbSuccess = false; mtFbFlash = false; if (phase === 'success') nextChallenge(); }, 1200);
-      } else {
-        const t = mtChallenge.seq[mtNoteIdx];
-        msgText = `Next: ${t.note} (${NT_STR_NAMES[t.str]} fret ${t.fret})`; msgErr = false;
-        mtFbHtml = renderSeqFB(mtChallenge.seq, mtNoteIdx, mtChallenge.startFret);
-      }
-    });
-  }
-
-  function detectChordTransition(note, cents, hz, semi) {
-    const activeChallenge = cxPhase === 'from' ? cxFromChallenge : cxToChallenge;
-    if (!activeChallenge) return;
-    const voice = activeChallenge.sortedVoices[cxVoiceIdx];
-    if (!voice) return;
-    const expMidi = BASE_MIDI[voice.str] + activeChallenge.resolved.bf + voice.fo;
-    const nm = note === voice.note;
-    const midiOk = Math.abs(semi + 69 - expMidi) <= 1;
-    const ok = nm && midiOk;
-    showDetected(note, cents, hz, ok);
-    if (nm && !midiOk && phase === 'listening') { msgText = `Right note, play on ${NT_STR_NAMES[voice.str]} string!`; msgErr = true; }
-    checkHold(ok, () => {
-      cxVoiceDone[cxVoiceIdx] = true; cxVoiceDone = [...cxVoiceDone];
-      cxFbSuccess = true; cxFbFlash = true;
-      setTimeout(() => { cxFbSuccess = false; cxFbFlash = false; }, 600);
-      cxVoiceIdx++; holdStart = 0;
-
-      if (cxVoiceIdx >= activeChallenge.sortedVoices.length) {
-        if (cxPhase === 'from') {
-          // Move to second chord
-          cxPhase = 'to';
-          cxVoiceIdx = 0;
-          cxVoiceDone = cxToChallenge.sortedVoices.map(() => false);
-          cxFbSuccess = false; cxFbFlash = false;
-          const firstVoice = cxToChallenge.sortedVoices[0];
-          msgText = `Now play ${cxToChallenge.chordName}: ${firstVoice.note} on ${NT_STR_NAMES[firstVoice.str]}`; msgErr = false;
-        } else {
-          // Both chords complete
-          engine.report(curItem, true, performance.now() - qStartTime);
-          const pts = scoreCorrect(40, 3);
-          msgText = `+${pts} points! Transition complete!`; msgErr = false;
-          cxFbSuccess = true; cxFbFlash = true;
-          setTimeout(() => { cxFbSuccess = false; cxFbFlash = false; if (phase === 'success') nextChallenge(); }, 1200);
-        }
-      } else {
-        const nextVoice = activeChallenge.sortedVoices[cxVoiceIdx];
-        msgText = `Now play ${nextVoice.note} on ${NT_STR_NAMES[nextVoice.str]}`; msgErr = false;
-      }
-    });
+  function handleSilence() {
+    if (phase !== 'listening') return;
+    challengeRef?.handleSilence();
   }
 
   // --- Flow functions ---
-  function onSilence() { showDetected(null); holdStart = 0; }
-
   async function onStart() {
     refreshMastery();
     refreshSessionMastery();
-    const ok = await audio.start();
-    if (!ok) { msgText = 'Mic access denied.'; msgErr = true; return; }
+    const result = await audio.start();
+    if (!result.ok) {
+      addToast(result.message);
+      msgText = result.message; msgErr = true;
+      return;
+    }
+    audio.addEventListener('detect', handleDetect);
+    audio.addEventListener('silence', handleSilence);
     phase = 'listening';
     nextChallenge();
-    audio.startLoop(onDetect, onSilence);
+    audio.startLoop();
   }
 
   function onSkip() {
@@ -637,6 +260,8 @@
   function onStop() {
     engine.save();
     saveExercise('practice', { bestScore: score, bestAccuracy: attempts > 0 ? Math.round(correct / attempts * 100) : 0 });
+    audio.removeEventListener('detect', handleDetect);
+    audio.removeEventListener('silence', handleSilence);
     phase = 'idle'; audio.stop();
     showDetected(null);
     refreshMastery();
@@ -647,16 +272,20 @@
     onStop();
     score = 0; streak = 0; best = 0; correct = 0; attempts = 0;
     engine.reset();
-    engine = new LearningEngine(unifiedConfig, 'practice');
+    engine = new LearningEngine(unifiedConfig, 'practice', { onError: (msg) => addToast(msg) });
     challengeType = null; curItem = null;
     refreshMastery();
     msgText = 'Press Start to begin'; msgErr = false;
   }
 
-  // Init mastery on mount
   refreshMastery();
 
-  onDestroy(() => { engine.save(); audio.stop(); });
+  onDestroy(() => {
+    audio.removeEventListener('detect', handleDetect);
+    audio.removeEventListener('silence', handleSilence);
+    engine.save();
+    audio.stop();
+  });
 </script>
 
 <svelte:head>
@@ -674,7 +303,6 @@
   </header>
 
   {#if phase === 'idle'}
-    <!-- Idle: mastery overview -->
     <div class="idle-panel">
       <div class="mastery-ring">
         {@html renderRing(mastery ? Math.round(mastery.overall.avgPL * 100) : 0, '#58A6FF', 120)}
@@ -693,9 +321,7 @@
       </div>
     </div>
   {:else}
-    <!-- Active: stats-for-nerds bar -->
     <div class="sfn-bar">
-      <!-- Session group -->
       <button class="sfn-group" class:sfn-active={sessionExpanded} onclick={() => { sessionExpanded = !sessionExpanded; engineExpanded = false; coverageExpanded = false; }}>
         <span class="sfn-group-label">SESSION</span>
         <span class="sfn-metric"><span class="sfn-val">{score}</span><span class="sfn-key">Score</span></span>
@@ -705,7 +331,6 @@
         <span class="sfn-metric"><span class="sfn-val">{accuracy}</span><span class="sfn-key">Acc</span></span>
       </button>
 
-      <!-- Engine group -->
       <button class="sfn-group" class:sfn-active={engineExpanded} onclick={() => { engineExpanded = !engineExpanded; sessionExpanded = false; coverageExpanded = false; }}>
         <span class="sfn-group-label">ENGINE</span>
         <span class="sfn-metric"><span class="sfn-val">{engine.theta.toFixed(2)}</span><span class="sfn-key">&theta;</span></span>
@@ -718,17 +343,15 @@
         </span>
       </button>
 
-      <!-- Coverage button -->
       <button class="sfn-group sfn-coverage-btn" class:sfn-active={coverageExpanded} onclick={() => { coverageExpanded = !coverageExpanded; sessionExpanded = false; engineExpanded = false; }} title="Fretboard Coverage">
         <span class="sfn-grid-icon">&#9638;</span>
       </button>
     </div>
 
-    <!-- Expandable panels -->
     {#if sessionExpanded}
       <div class="sfn-panel">
         <div class="sfn-panel-row">
-          <div class="sfn-panel-metric"><span class="sfn-panel-label">Questions</span><span class="sfn-panel-value">{engine.qNum}</span></div>
+          <div class="sfn-panel-metric"><span class="sfn-panel-label">Questions</span><span class="sfn-panel-value">{engine.questionNumber}</span></div>
           <div class="sfn-panel-metric"><span class="sfn-panel-label">Avg Time</span><span class="sfn-panel-value">{sessionMastery ? sfnFmtMs(sessionMastery.overall.avgResponseTime) : '\u2014'}</span></div>
           <div class="sfn-panel-metric">
             <span class="sfn-panel-label">Fatigue</span>
@@ -796,19 +419,18 @@
       {#if challengeType}
         <div class="type-badge">{TYPES.find(t => t.id === challengeType)?.name ?? ''}</div>
       {/if}
-      <!-- Challenge display: switch on type -->
       {#if challengeType === 'nf'}
-        <NoteFind target={nfTarget} fbHtml={nfFbHtml} fbSuccess={nfFbSuccess} fbFlash={nfFbFlash} {recall} />
+        <NoteFind bind:this={challengeRef} onComplete={onChallengeComplete} onWrong={onChallengeWrong} {setMsg} {showDetected} />
       {:else if challengeType === 'iv'}
-        <IntervalTrainer ref={ivRef} interval={ivInterval} targetDisplay={ivTargetDisplay} targetHidden={ivTargetHidden} fbHtml={ivFbHtml} fbSuccess={ivFbSuccess} fbFlash={ivFbFlash} />
+        <IntervalTrainer bind:this={challengeRef} onComplete={onChallengeComplete} onWrong={onChallengeWrong} {setMsg} {showDetected} />
       {:else if challengeType === 'cp'}
-        <ChordPlayer challenge={cpChallenge} voiceIdx={cpVoiceIdx} voiceDone={cpVoiceDone} fbSuccess={cpFbSuccess} fbFlash={cpFbFlash} {recall} />
+        <ChordPlayer bind:this={challengeRef} onComplete={onChallengeComplete} onWrong={onChallengeWrong} onInvalid={onChallengeInvalid} {setMsg} {showDetected} />
       {:else if challengeType === 'sr'}
-        <ScaleRunner challenge={srChallenge} noteIdx={srNoteIdx} fbHtml={srFbHtml} fbVisible={srFbVisible} fbSuccess={srFbSuccess} fbFlash={srFbFlash} />
+        <ScaleRunner bind:this={challengeRef} onComplete={onChallengeComplete} onWrong={onChallengeWrong} onInvalid={onChallengeInvalid} {setMsg} {showDetected} />
       {:else if challengeType === 'mt'}
-        <ModeTrainer challenge={mtChallenge} noteIdx={mtNoteIdx} fbHtml={mtFbHtml} fbVisible={mtFbVisible} fbSuccess={mtFbSuccess} fbFlash={mtFbFlash} />
+        <ModeTrainer bind:this={challengeRef} onComplete={onChallengeComplete} onWrong={onChallengeWrong} onInvalid={onChallengeInvalid} {setMsg} {showDetected} />
       {:else if challengeType === 'cx'}
-        <ChordTransition fromChallenge={cxFromChallenge} toChallenge={cxToChallenge} phase={cxPhase} voiceIdx={cxVoiceIdx} voiceDone={cxVoiceDone} fbSuccess={cxFbSuccess} fbFlash={cxFbFlash} {recall} />
+        <ChordTransition bind:this={challengeRef} onComplete={onChallengeComplete} onWrong={onChallengeWrong} onInvalid={onChallengeInvalid} {setMsg} {showDetected} />
       {/if}
 
       <PitchDisplay {detectedNote} {detectedClass} {centsLbl} {centsLeft} {hzText} />
@@ -839,7 +461,6 @@
   .nt-hdr h1{font-size:18px;font-weight:900;letter-spacing:-1px}
   .nt-nav{display:flex;gap:.4rem}
   .nt-nav a{text-decoration:none}
-  /* Stats-for-nerds bar */
   .sfn-bar{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;flex-shrink:0}
   .sfn-group{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--sf);border:1px solid var(--bd);border-radius:8px;cursor:pointer;transition:all .15s;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--tx)}
   .sfn-group:hover{border-color:#555;background:var(--sf2)}
@@ -853,8 +474,6 @@
   .sfn-coverage-btn{padding:4px 8px}
   .sfn-grid-icon{font-size:16px;color:var(--mt);line-height:1}
   .sfn-group.sfn-active .sfn-grid-icon{color:var(--ac)}
-
-  /* Expandable panels */
   .sfn-panel{background:var(--sf);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;flex-shrink:0;animation:sfn-in .15s ease-out}
   @keyframes sfn-in{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
   .sfn-panel-row{display:flex;gap:12px;flex-wrap:wrap}
@@ -882,7 +501,6 @@
   .nt-msg{text-align:center;font-size:14px;color:var(--mt);min-height:20px}
   .nt-msg.nt-err{color:#FF6B6B}
   @keyframes nt-glow{0%{box-shadow:0 0 20px rgba(78,203,113,.4)}100%{box-shadow:none}}
-
   .idle-panel{display:flex;flex-direction:column;align-items:center;gap:1.5rem;padding:1rem}
   .mastery-ring{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center}
   .mastery-ring :global(svg){position:absolute;inset:0}
@@ -894,7 +512,6 @@
   .type-bar-fill{height:100%;background:var(--ac);border-radius:4px;transition:width .3s}
   .type-bar-pct{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mt);width:36px;text-align:right}
   .type-badge{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--mt);background:var(--sf);border:1px solid var(--bd);border-radius:12px;padding:.2rem .6rem;text-transform:uppercase;letter-spacing:.5px}
-
   @media(max-width:600px){
     .nt-wrap{padding:.5rem;gap:.4rem}
     .nt-hdr h1{font-size:15px}

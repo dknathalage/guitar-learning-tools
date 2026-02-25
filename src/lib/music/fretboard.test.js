@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { noteAt, fretForNote, shuffle, scaleSequence, renderFB, fbMiniBoard, NT_TUNING, NT_STR_NAMES, BASE_MIDI, NT_NATURAL } from './fretboard.js';
+import { noteAt, fretForNote, shuffle, scaleSequence, renderNoteFretboard, renderMiniFretboard, STANDARD_TUNING, STRING_NAMES, BASE_MIDI, NATURAL_NOTES } from './fretboard.js';
 
 describe('noteAt', () => {
   it('open string 0 (low E) = E', () => {
@@ -150,59 +150,59 @@ describe('scaleSequence', () => {
   });
 });
 
-describe('renderFB', () => {
+describe('renderNoteFretboard', () => {
   const target = { str: 0, fret: 5, note: 'A' };
 
   it('returns valid SVG', () => {
-    const svg = renderFB(target, null, false);
+    const svg = renderNoteFretboard(target, null, false);
     expect(svg).toMatch(/^<svg/);
     expect(svg).toMatch(/<\/svg>$/);
   });
 
   it('contains the target note', () => {
-    const svg = renderFB(target, null, false);
+    const svg = renderNoteFretboard(target, null, false);
     expect(svg).toContain('>A<');
   });
 
   it('uses blue (#58A6FF) when not correct', () => {
-    const svg = renderFB(target, null, false);
+    const svg = renderNoteFretboard(target, null, false);
     expect(svg).toContain('#58A6FF');
   });
 
   it('uses green (#4ECB71) when correct', () => {
-    const svg = renderFB(target, null, true);
+    const svg = renderNoteFretboard(target, null, true);
     expect(svg).toContain('#4ECB71');
   });
 });
 
-describe('fbMiniBoard', () => {
+describe('renderMiniFretboard', () => {
   it('returns valid SVG', () => {
-    const svg = fbMiniBoard(0, 5);
+    const svg = renderMiniFretboard(0, 5);
     expect(svg).toMatch(/^<svg/);
     expect(svg).toMatch(/<\/svg>$/);
   });
 
   it('shows "?" in purple (#C084FC)', () => {
-    const svg = fbMiniBoard(0, 5);
+    const svg = renderMiniFretboard(0, 5);
     expect(svg).toContain('#C084FC');
     expect(svg).toContain('>?<');
   });
 });
 
 describe('exported constants', () => {
-  it('NT_TUNING matches standard tuning', () => {
-    expect(NT_TUNING).toEqual([4, 9, 2, 7, 11, 4]);
+  it('STANDARD_TUNING matches standard tuning', () => {
+    expect(STANDARD_TUNING).toEqual([4, 9, 2, 7, 11, 4]);
   });
 
-  it('NT_STR_NAMES has 6 names', () => {
-    expect(NT_STR_NAMES).toHaveLength(6);
+  it('STRING_NAMES has 6 names', () => {
+    expect(STRING_NAMES).toHaveLength(6);
   });
 
   it('BASE_MIDI has correct MIDI values for standard tuning', () => {
     expect(BASE_MIDI).toEqual([40, 45, 50, 55, 59, 64]);
   });
 
-  it('NT_NATURAL has 7 natural notes', () => {
-    expect(NT_NATURAL).toEqual(['C', 'D', 'E', 'F', 'G', 'A', 'B']);
+  it('NATURAL_NOTES has 7 natural notes', () => {
+    expect(NATURAL_NOTES).toEqual(['C', 'D', 'E', 'F', 'G', 'A', 'B']);
   });
 });

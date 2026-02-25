@@ -1,5 +1,5 @@
 import { NOTES, INTERVALS } from '$lib/constants/music.js';
-import { NT_NATURAL, noteAt, fretForNote, BASE_MIDI, LANDMARKS, nearestLandmark, landmarkZone } from '$lib/music/fretboard.js';
+import { NATURAL_NOTES, noteAt, fretForNote, BASE_MIDI, LANDMARKS, nearestLandmark, landmarkZone } from '$lib/music/fretboard.js';
 
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
@@ -12,7 +12,7 @@ export const intervalTrainerConfig = {
   itemDifficulty(item) {
     const dissonance = DISSONANCE[item.interval.semi] || 0.5;
     const fretFactor = item.ref.fret / 15;
-    const accidental = !NT_NATURAL.includes(item.ref.note) ? 1 : 0;
+    const accidental = !NATURAL_NOTES.includes(item.ref.note) ? 1 : 0;
     return clamp(dissonance * 0.7 + fretFactor * 0.15 + accidental * 0.15, 0, 1);
   },
 

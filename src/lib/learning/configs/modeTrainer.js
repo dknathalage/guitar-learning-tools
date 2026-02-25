@@ -1,5 +1,5 @@
 import { NOTES, MODES } from '$lib/constants/music.js';
-import { NT_NATURAL, LANDMARKS, nearestLandmark, landmarkZone } from '$lib/music/fretboard.js';
+import { NATURAL_NOTES, LANDMARKS, nearestLandmark, landmarkZone } from '$lib/music/fretboard.js';
 
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
@@ -11,7 +11,7 @@ const MODE_COMPLEXITY = {
 export const modeTrainerConfig = {
   itemDifficulty(item) {
     const mc = MODE_COMPLEXITY[item.modeId] || 0.3;
-    const rootAccidental = !NT_NATURAL.includes(NOTES[item.rootIdx]) ? 0.15 : 0;
+    const rootAccidental = !NATURAL_NOTES.includes(NOTES[item.rootIdx]) ? 0.15 : 0;
     const dirBonus = item.dir === 'updown' ? 0.2 : 0;
     return clamp(mc + rootAccidental + dirBonus, 0, 1);
   },

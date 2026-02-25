@@ -1,5 +1,9 @@
 export const NOTES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+export const NOTE_DISPLAY = ['C','C#/Db','D','D#/Eb','E','F','F#/Gb','G','G#/Ab','A','A#/Bb','B'];
 export const A4 = 440;
+export const BASE_MIDI = [40, 45, 50, 55, 59, 64];
+
+export const INTERVAL_NAMES = {0:'R',1:'\u266d2',2:'2',3:'\u266d3',4:'3',5:'4',6:'\u266d5',7:'5',8:'#5',9:'6',10:'\u266d7',11:'7'};
 
 export const TUNINGS = {
   std:      { id:'std',      name:'Standard',        label:'EADGBE',    tuning:[4,9,2,7,11,4], stringNames:['E','A','D','G','B','e'] },
@@ -31,10 +35,13 @@ export const CHORD_TYPES = [
   {id:'7',    name:'Dom 7',  sym:'7',    iv:[0,4,7,10], fm:['R','3','5','\u266d7']},
   {id:'maj7', name:'Maj 7',  sym:'maj7', iv:[0,4,7,11], fm:['R','3','5','7']},
   {id:'m7',   name:'Min 7',  sym:'m7',   iv:[0,3,7,10], fm:['R','\u266d3','5','\u266d7']},
-  {id:'dim',  name:'Dim',    sym:'dim',  iv:[0,3,6],    fm:['R','\u266d3','\u266d5']},
-  {id:'aug',  name:'Aug',    sym:'+',    iv:[0,4,8],    fm:['R','3','#5']},
   {id:'sus2', name:'Sus 2',  sym:'sus2', iv:[0,2,7],    fm:['R','2','5']},
-  {id:'sus4', name:'Sus 4',  sym:'sus4', iv:[0,5,7],    fm:['R','4','5']}
+  {id:'sus4', name:'Sus 4',  sym:'sus4', iv:[0,5,7],    fm:['R','4','5']},
+  {id:'dim',  name:'Dim',    sym:'dim',  iv:[0,3,6],    fm:['R','\u266d3','\u266d5']},
+  {id:'dim7', name:'Dim 7',  sym:'\u00b07', iv:[0,3,6,9], fm:['R','\u266d3','\u266d5','\u266d\u266d7']},
+  {id:'aug',  name:'Aug',    sym:'+',    iv:[0,4,8],    fm:['R','3','#5']},
+  {id:'add9', name:'Add 9',  sym:'add9', iv:[0,4,7,14], fm:['R','3','5','9']},
+  {id:'5',    name:'Power',  sym:'5',    iv:[0,7],      fm:['R','5']}
 ];
 
 export const SCALES = [

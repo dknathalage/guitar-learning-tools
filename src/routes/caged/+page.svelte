@@ -5,7 +5,7 @@
   import { NOTES } from '$lib/constants/music.js';
 
   onMount(() => markVisited('caged-visualizer'));
-  import { CFG, setTuning, adaptShape, getBf, resolve, renderDiagram, renderNeck } from '$lib/music/chords.js';
+  import { CHORD_CONFIG, setTuning, adaptShapeToTuning, getBaseFret, resolve, renderDiagram, renderNeck } from '$lib/music/chords.js';
 
   let curType = $state('maj');
   let curRoot = $state(0);
@@ -14,17 +14,17 @@
   let curLayer = $state(0);
   let kbActive = $state(false);
 
-  let ct = $derived(CFG.chordTypes.find(c => c.id === curType));
-  let rn = $derived(CFG.noteDisplay[curRoot]);
-  let adapted = $derived(CFG.shapes.map(adaptShape));
-  let sortedShapes = $derived([...adapted].sort((a, b) => getBf(a, curRoot) - getBf(b, curRoot)));
+  let chordType = $derived(CHORD_CONFIG.chordTypes.find(c => c.id === curType));
+  let rootName = $derived(CHORD_CONFIG.noteDisplay[curRoot]);
+  let adapted = $derived(CHORD_CONFIG.shapes.map(adaptShapeToTuning));
+  let sortedShapes = $derived([...adapted].sort((a, b) => getBaseFret(a, curRoot) - getBaseFret(b, curRoot)));
   let sortedShapeIds = $derived(sortedShapes.map(s => s.id));
 
-  let cn = $derived(`${rn}${ct.sym}`);
-  let tunDef = $derived(CFG.tunings[curTuning]);
-  let shLabel = $derived(curShape ? CFG.shapes.find(s => s.id === curShape)?.label : 'All Shapes');
-  let tunLabel = $derived(curTuning !== 'std' ? ` (${tunDef.name})` : '');
-  let pageTitle = $derived(`${rn} ${ct.name} \u2014 ${shLabel}${tunLabel}`);
+  let chordName = $derived(`${rootName}${chordType.sym}`);
+  let tuningDef = $derived(CHORD_CONFIG.tunings[curTuning]);
+  let shapeLabel = $derived(curShape ? CHORD_CONFIG.shapes.find(s => s.id === curShape)?.label : 'All Shapes');
+  let tuningLabel = $derived(curTuning !== 'std' ? ` (${tuningDef.name})` : '');
+  let pageTitle = $derived(`${rootName} ${chordType.name} \u2014 ${shapeLabel}${tuningLabel}`);
 
   function changeTuning(id) {
     setTuning(id);
@@ -54,9 +54,9 @@
     } else if (curLayer === 0) {
       curRoot = (curRoot + delta + 12) % 12;
     } else if (curLayer === 1) {
-      const idx = CFG.chordTypes.findIndex(c => c.id === curType);
-      const ni = (idx + delta + CFG.chordTypes.length) % CFG.chordTypes.length;
-      curType = CFG.chordTypes[ni].id;
+      const idx = CHORD_CONFIG.chordTypes.findIndex(c => c.id === curType);
+      const ni = (idx + delta + CHORD_CONFIG.chordTypes.length) % CHORD_CONFIG.chordTypes.length;
+      curType = CHORD_CONFIG.chordTypes[ni].id;
     } else if (curLayer === 2) {
       const cycle = [null, ...sortedShapeIds];
       const ci = cycle.indexOf(curShape);
@@ -80,7 +80,7 @@
 <div class="ctr">
   <header class="hdr">
     <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
-      <h1><span>{rn} {ct.name}</span><br><span>{shLabel}{tunLabel}</span></h1>
+      <h1><span>{rootName} {chordType.name}</span><br><span>{shapeLabel}{tuningLabel}</span></h1>
       <a href="{base}/" class="pill" style="font-size:13px;text-decoration:none">Home</a>
       <a href="{base}/tuner" class="pill" style="font-size:13px;text-decoration:none">Tuner</a>
     </div>
@@ -92,12 +92,12 @@
           value={curTuning}
           onchange={(e) => changeTuning(e.target.value)}
         >
-          {#each Object.values(CFG.tunings) as t}
+          {#each Object.values(CHORD_CONFIG.tunings) as t}
             <option value={t.id}>{t.name} ({t.label})</option>
           {/each}
         </select>
         <div class="k-pills {kbActive && curLayer === 0 ? 'focus-row' : ''}" role="group" aria-label="Root note">
-          {#each CFG.noteDisplay as n, i}
+          {#each CHORD_CONFIG.noteDisplay as n, i}
             <div
               class="pill {i === curRoot ? 'on' : ''}"
               onclick={() => setRoot(i)}
@@ -109,7 +109,7 @@
         </div>
       </div>
       <div class="row {kbActive && curLayer === 1 ? 'focus-row' : ''}" role="group" aria-label="Chord type">
-        {#each CFG.chordTypes as c}
+        {#each CHORD_CONFIG.chordTypes as c}
           <div
             class="pill {c.id === curType ? 'on' : ''}"
             onclick={() => { curType = c.id; }}
@@ -124,12 +124,12 @@
   <main>
     <section
       class="shapes-grid {kbActive && curLayer === 2 ? 'focus-row' : ''}"
-      style="grid-template-columns: repeat({CFG.shapes.length}, 1fr)"
+      style="grid-template-columns: repeat({CHORD_CONFIG.shapes.length}, 1fr)"
       aria-label="Chord shapes"
     >
       {#each sortedShapes as sh (sh.id)}
-        {@const col = CFG.shapeColors[sh.id]}
-        {@const r = resolve(sh, curRoot, ct.iv)}
+        {@const col = CHORD_CONFIG.shapeColors[sh.id]}
+        {@const r = resolve(sh, curRoot, chordType.iv)}
         {@const sel = curShape === sh.id}
         <div
           class="shape-card {sel ? 'sel' : ''}"
@@ -140,17 +140,17 @@
           tabindex="0"
         >
           <div class="sh-title" style="color:{col}">{sh.label}</div>
-          <div class="sh-sub">{r.bf === 0 ? 'Open' : 'Fret ' + r.bf} &middot; {cn}</div>
+          <div class="sh-sub">{r.baseFret === 0 ? 'Open' : 'Fret ' + r.baseFret} &middot; {chordName}</div>
           <div class="fb">{@html renderDiagram(r, col)}</div>
         </div>
       {/each}
     </section>
     <section class="ns" aria-label="Full neck overview">
-      <div class="nc">{@html renderNeck(curRoot, ct, curShape)}</div>
+      <div class="nc">{@html renderNeck(curRoot, chordType, curShape)}</div>
       <div class="leg">
-        {#each CFG.shapes as sh}
+        {#each CHORD_CONFIG.shapes as sh}
           <div class="li">
-            <div class="ld" style="background:{CFG.shapeColors[sh.id]}"></div>
+            <div class="ld" style="background:{CHORD_CONFIG.shapeColors[sh.id]}"></div>
             {sh.label}
           </div>
         {/each}

@@ -1,5 +1,4 @@
 <script>
-  import { onDestroy } from 'svelte';
   import { TYPES } from '$lib/learning/configs/unified.js';
 
   let { engine } = $props();
@@ -35,9 +34,13 @@
     if (engine) mastery = engine.getMastery();
   }
 
-  refresh();
-  const _ivl = setInterval(refresh, 1000);
-  onDestroy(() => clearInterval(_ivl));
+  // Only poll when panel is open; cleanup stops polling when closed
+  $effect(() => {
+    if (!open) return;
+    refresh();
+    const interval = setInterval(refresh, 2000);
+    return () => clearInterval(interval);
+  });
 
   // Drag resize — attach window listeners while dragging
   $effect(() => {
