@@ -200,6 +200,7 @@ export class LearningEngine {
     // Known items
     for (const [key, rec] of this.items) {
       const item = this.config.itemFromKey(key);
+      if (!item) continue; // type was removed
       candidates.push({ item, rec, isNew: false });
     }
 
@@ -677,6 +678,7 @@ export class LearningEngine {
     for (const [key, rec] of this.items) {
       if (rec.due > 0 && rec.due < now) {
         const item = this.config.itemFromKey(key);
+        if (!item) continue; // type was removed
         overdue.push({ item, overdueness: now - rec.due });
       }
     }

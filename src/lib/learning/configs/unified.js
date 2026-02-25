@@ -126,6 +126,7 @@ export const unifiedConfig = {
     const typeId = cleanKey.slice(0, colonIdx);
     const innerKey = cleanKey.slice(colonIdx + 1);
     const t = typeById(typeId);
+    if (!t) return null; // type was removed
     const innerItem = t.config.itemFromKey(innerKey);
     const item = { _type: typeId, _inner: innerItem };
     if (isRecall) item._recall = true;

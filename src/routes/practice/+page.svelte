@@ -141,7 +141,7 @@
   let accuracyNum = $derived(attempts > 0 ? correct / attempts : 0);
   let showStart = $derived(phase === 'idle');
   let showActive = $derived(phase !== 'idle');
-  let showReset = $derived(score > 0 || attempts > 0);
+  let showReset = $derived(score > 0 || attempts > 0 || engine.totalAttempts > 0);
 
   // --- Stats-for-nerds: current item stats ---
   let curItemKey = $derived(curItem ? engine.config.itemKey(curItem) : null);
