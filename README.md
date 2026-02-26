@@ -24,9 +24,22 @@ SvelteKit SPA with static adapter. No backend — all learning state is persiste
 ```
 src/lib/
   audio/
-    pitch.js              # YIN pitch detection
-    AudioManager.js       # Web Audio mic lifecycle + detection loop
+    pitch.js              # Multi-candidate YIN pitch detection + pre-emphasis
+    AudioManager.js       # Web Audio mic lifecycle + chord/onset routing
     TonePlayer.js         # Sine-wave synthesis for reference tones
+    worklet/
+      guitar-processor.js # AudioWorkletProcessor (all algorithms inlined)
+    analysis/
+      harmonics.js        # Multi-candidate harmonic correction (sub/super/3rd)
+      chromagram.js       # FFT, Hann window, chromagram, Harmonic Product Spectrum
+      templates.js        # Chord template generation + weighted cosine matching
+      guitar-weights.js   # Guitar playability priors for chord scoring
+      onset.js            # Log-compressed spectral flux, OnsetDetector, IOITracker
+      kalman.js           # Kalman pitch tracker (2D state + velocity)
+      cepstrum.js         # Cepstral pitch detection + ensemble logic
+      cqt.js              # Constant-Q Transform (opt-in chromagram alternative)
+      calibration.js      # Noise floor calibration
+      features.js         # Articulation detection (vibrato, bend)
   music/
     fretboard.js          # Note math, SVG fretboard rendering, scale sequences
     chords.js             # CAGED shape resolution, chord diagrams, neck overlay
@@ -45,7 +58,7 @@ src/lib/
       coverage.js         # String x fret-zone coverage matrix
       confusion.js        # Per-item confusion frequency tracking
     persistence/
-      serializer.js       # Versioned save/load (v3) with migration
+      serializer.js       # Versioned save/load (v4) with migration
   constants/
     music.js              # NOTES, TUNINGS, INTERVALS, CHORD_TYPES
 ```
@@ -54,43 +67,57 @@ src/lib/
 
 ## Algorithms
 
-### Pitch Detection — YIN
+### Pitch Detection — Multi-Candidate YIN + Ensemble
 
-The app uses the [YIN algorithm](http://audition.ens.fr/adc/pdf/2002_JASA_YIN.pdf) for monophonic pitch detection from the microphone.
+The app uses an enhanced [YIN algorithm](http://audition.ens.fr/adc/pdf/2002_JASA_YIN.pdf) running in an AudioWorklet for real-time monophonic pitch detection.
 
 **Pipeline:**
 
 1. Capture raw audio via `getUserMedia` (echo cancellation, noise suppression, and auto-gain disabled)
-2. Read time-domain data from a Web Audio `AnalyserNode` (FFT size 8192)
-3. Check RMS amplitude — silence threshold at 0.01
-4. Compute the cumulative mean normalized difference function (CMND) across lags
-5. Find the first lag where CMND drops below threshold (0.15)
-6. Refine with parabolic interpolation between neighboring lag values
-7. Reject if confidence (1 - CMND at best lag) < 85%
-8. Convert frequency to note name + cents deviation
-9. Require 3 consecutive stable frames before emitting a `detect` event
+2. AudioWorklet ring buffer (8192 samples) triggers analysis every 512 samples (HOP_SIZE)
+3. Extract 4096-sample frame, compute RMS — adaptive silence threshold
+4. Apply pre-emphasis filter (alpha=0.97) to boost fundamentals before YIN
+5. Kalman filter predicts expected pitch from previous frames
+6. Multi-candidate YIN: collect all CMND local minima, keep top 5, score with transition cost penalties (+0.15 for >6 semi jumps, +0.30 for >10 semi)
+7. Adaptive threshold maps RMS to [0.20, 0.10] — conservative when quiet, aggressive when loud
+8. Multi-candidate harmonic correction: check sub-octave (hz/2), super-octave (hz×2), and 3rd harmonic (hz/3) with per-candidate CMND thresholds
+9. Optional cepstral pitch detection provides a second opinion; ensemble logic boosts confidence when YIN and cepstrum agree
+10. Kalman filter update smooths pitch tracking across slides and vibrato
+11. StableNoteTracker requires 3 consecutive stable frames before emitting a `detect` event
 
 **Parameters:**
 
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
-| FFT size | 8192 | ~186ms at 44.1kHz — enough to resolve E2 (82Hz) |
-| Frequency range | 50–1400 Hz | Covers standard guitar range |
-| YIN threshold | 0.15 | Balance between sensitivity and false positives |
+| Frame size | 4096 | ~85ms at 48kHz — resolves E2 (82Hz) |
+| Hop size | 512 | ~10.7ms analysis interval |
+| Frequency range | 50–1400 Hz | Full standard guitar range |
+| YIN threshold | adaptive 0.10–0.20 | Adapts to signal strength |
 | Confidence minimum | 85% | Rejects ambiguous detections |
 | Stable frames | 3 | Filters transient noise and pick attacks |
+| Kalman process noise | 0.01 pitch, 0.005 velocity | Tuned for guitar pitch changes |
+
+**Config flags** for A/B testing:
+
+| Flag | Default | Effect |
+|------|---------|--------|
+| `enableKalman` | true | Kalman pitch tracking |
+| `enableCepstrum` | false | Cepstral ensemble pitch (second opinion) |
+| `useCQT` | false | CQT chromagram instead of FFT |
 
 **Pros:**
-- Well-established, low-latency algorithm suitable for real-time use
-- The stability requirement effectively filters pick transients and ambient noise
-- Disabling browser audio processing preserves the raw signal for cleaner detection
-- Parabolic interpolation gives sub-bin frequency accuracy
+- Multi-candidate YIN with transition costs reduces octave errors vs single-candidate
+- Harmonic correction handles sub-octave, super-octave, and 3rd harmonic errors on wound strings
+- Adaptive threshold adjusts to playing dynamics automatically
+- Kalman filter smooths pitch through slides and vibrato without adding latency
+- Pre-emphasis boosts guitar fundamentals relative to harmonics
+- AudioWorklet runs off the main thread — no UI jank
 
 **Cons:**
-- ~186ms inherent latency from the FFT window size — noticeable on low strings
-- Guitar fundamentals are often weaker than their harmonics (especially wound strings), causing octave-up errors with no harmonic correction fallback
-- Static 0.15 threshold does not adapt to different guitars, string types, or playing dynamics
+- ~85ms inherent latency from the analysis window — noticeable on low strings
+- Cepstral pitch less accurate below 100Hz due to short quefrency range
 - The 50Hz floor would miss drop tunings below D2 (~73Hz)
+- Worklet code is duplicated from analysis modules — must be kept in sync manually
 
 ---
 
@@ -245,10 +272,9 @@ Supports 6 tunings: standard, drop-D, open-G, open-D, DADGAD, half-step-down.
 
 ### Near-term
 
-- **Harmonic-aware pitch correction** — After YIN detection, check if `freq/2` is a strong autocorrelation candidate. Guitar fundamentals are often weaker than harmonics on wound strings, making octave-up errors the most common detection failure
-- **Adaptive BKT parameters** — Fit `pG` and `pS` per exercise type from actual student data using maximum-likelihood estimation, rather than using hardcoded values
 - **Model consolidation** — Evaluate dropping BKT in favor of FSRS retrievability as the sole knowledge signal, eliminating the reconciliation layer
 - **Scoring weight optimization** — Log item selections and outcomes, then tune the 9 scoring weights via offline optimization instead of hand-tuning
+- **CQT evaluation** — Benchmark CQT chromagram vs FFT chromagram for chord recognition accuracy and enable by default if superior
 
 ### Medium-term
 
@@ -256,13 +282,20 @@ Supports 6 tunings: standard, drop-D, open-G, open-D, DADGAD, half-step-down.
 - **Cross-exercise knowledge transfer** — Share cluster-level mastery between exercises (e.g., mastering note-find on string 3 zone 7 raises the prior for interval training in the same region)
 - **Session planning** — Structure sessions with deliberate arcs: warm-up (high-pL items), challenge zone (items near theta), review (overdue FSRS items), cool-down — mirroring real practice structure
 - **Confusion matrix** — Build a full 12x12 note confusion matrix instead of per-item tracking, enabling more targeted discrimination drills
+- **Rhythm-based exercises** — Leverage existing onset detection and IOITracker for timing accuracy drills
 
 ### Longer-term
 
-- **Onset and rhythm detection** — Extract timing accuracy, note duration, and dynamics from the existing `AnalyserNode` data for rhythm-based exercises
 - **Sequence-level challenges** — Scale runs, arpeggios, and progressions where note *order* matters, requiring a sequence model rather than item-level tracking
 - **FSRS weight personalization** — After ~100+ reviews, fit the 19 FSRS parameters to the student's personal forgetting curve using open-source optimizers
 - **Expanded tuning support** — Lower the pitch detection floor below 50Hz and add more alternate tuning presets
+- **Polyphonic pitch detection** — Move beyond chromagram-only chord recognition to actual polyphonic pitch tracking
+
+### Completed
+
+- ~~Harmonic-aware pitch correction~~ — Multi-candidate correction for sub-octave, super-octave, and 3rd harmonic errors
+- ~~Adaptive BKT parameters~~ — Per-student pG, pS, pT estimation from observed data
+- ~~Onset and rhythm detection~~ — Log-compressed spectral flux with OnsetDetector and IOITracker
 
 ---
 
