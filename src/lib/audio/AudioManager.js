@@ -10,7 +10,8 @@ import { StableNoteTracker } from './StableNoteTracker.js';
 
 class ChordDetector {
   constructor() {
-    this._chromaBuffer = [];
+    this._emaChroma = null;
+    this._emaAlpha = 0.3;
     this._lastChord = null;
     this._stableCount = 0;
     this._templates = null;
@@ -21,21 +22,26 @@ class ChordDetector {
       this._templates = buildChordTemplates();
     }
 
-    this._chromaBuffer.push(chromagram);
-    if (this._chromaBuffer.length > 5) this._chromaBuffer.shift();
-
-    // Average chromagram over buffer
-    const avg = new Float32Array(12);
-    for (const c of this._chromaBuffer) {
-      for (let i = 0; i < 12; i++) avg[i] += c[i];
+    // EMA smoothing
+    if (!this._emaChroma) {
+      this._emaChroma = new Float32Array(chromagram);
+    } else {
+      const a = this._emaAlpha;
+      for (let i = 0; i < 12; i++) {
+        this._emaChroma[i] = a * chromagram[i] + (1 - a) * this._emaChroma[i];
+      }
     }
-    // Re-normalize
-    let norm = 0;
-    for (let i = 0; i < 12; i++) norm += avg[i] * avg[i];
-    norm = Math.sqrt(norm);
-    if (norm > 0) for (let i = 0; i < 12; i++) avg[i] /= norm;
 
-    const matches = matchChord(avg, this._templates);
+    // L2 re-normalize after EMA update
+    const smoothed = new Float32Array(12);
+    let norm = 0;
+    for (let i = 0; i < 12; i++) norm += this._emaChroma[i] * this._emaChroma[i];
+    norm = Math.sqrt(norm);
+    if (norm > 0) {
+      for (let i = 0; i < 12; i++) smoothed[i] = this._emaChroma[i] / norm;
+    }
+
+    const matches = matchChord(smoothed, this._templates);
     if (matches.length === 0) {
       this._lastChord = null;
       this._stableCount = 0;
@@ -52,13 +58,13 @@ class ChordDetector {
 
     // Require 3+ stable frames
     if (this._stableCount >= 3) {
-      return { ...top, chromagram: avg };
+      return { ...top, chromagram: smoothed };
     }
     return null;
   }
 
   reset() {
-    this._chromaBuffer = [];
+    this._emaChroma = null;
     this._lastChord = null;
     this._stableCount = 0;
   }

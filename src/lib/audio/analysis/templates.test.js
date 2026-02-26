@@ -107,4 +107,56 @@ describe('matchChord', () => {
     const loose = matchChord(observed, templates, 0.5);
     expect(loose.length).toBeGreaterThanOrEqual(strict.length);
   });
+
+  it('weights parameter modifies scores', () => {
+    // Perfect C major chromagram
+    const observed = new Float32Array(12);
+    observed[0] = 1; observed[4] = 1; observed[7] = 1;
+    const norm = Math.sqrt(3);
+    for (let i = 0; i < 12; i++) observed[i] /= norm;
+
+    // Build weights that boost index 0 (should be C maj) and penalize others
+    const weights = new Map();
+    for (let i = 0; i < templates.length; i++) weights.set(i, 0.5);
+    // Find C major index
+    const cMajIdx = templates.findIndex(t => t.rootName === 'C' && t.typeId === 'maj');
+    weights.set(cMajIdx, 1.2);
+
+    const unweighted = matchChord(observed, templates, 0.5);
+    const weighted = matchChord(observed, templates, 0.5, weights);
+
+    // C major should still be top in weighted results
+    expect(weighted[0].chordName).toBe('C');
+
+    // Weighted C major score should differ from unweighted
+    const uwCMaj = unweighted.find(r => r.chordName === 'C');
+    const wCMaj = weighted.find(r => r.chordName === 'C');
+    expect(wCMaj.score).not.toEqual(uwCMaj.score);
+
+    // Weighted results count may differ due to threshold filtering with weights
+    // Penalized chords (weight 0.5) may drop below threshold
+    const penalized = weighted.filter(r => r.chordName !== 'C');
+    const uwOthers = unweighted.filter(r => r.chordName !== 'C');
+    // Each penalized score should be <= its unweighted counterpart
+    for (const p of penalized) {
+      const uw = uwOthers.find(r => r.chordName === p.chordName);
+      if (uw) expect(p.score).toBeLessThanOrEqual(uw.score);
+    }
+  });
+
+  it('null weights parameter gives same results as no weights', () => {
+    const observed = new Float32Array(12);
+    observed[0] = 1; observed[4] = 1; observed[7] = 1;
+    const norm = Math.sqrt(3);
+    for (let i = 0; i < 12; i++) observed[i] /= norm;
+
+    const noWeights = matchChord(observed, templates, 0.65);
+    const nullWeights = matchChord(observed, templates, 0.65, null);
+
+    expect(noWeights.length).toBe(nullWeights.length);
+    for (let i = 0; i < noWeights.length; i++) {
+      expect(noWeights[i].score).toBe(nullWeights[i].score);
+      expect(noWeights[i].chordName).toBe(nullWeights[i].chordName);
+    }
+  });
 });

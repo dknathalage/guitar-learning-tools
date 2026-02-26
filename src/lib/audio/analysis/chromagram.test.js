@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { fft, hannWindow, magnitudeSpectrum, computeChromagram } from './chromagram.js';
+import { fft, hannWindow, magnitudeSpectrum, computeChromagram, harmonicProductSpectrum } from './chromagram.js';
 
 function generateSine(freq, sampleRate, length) {
   const buf = new Float32Array(length);
@@ -155,6 +155,72 @@ describe('computeChromagram', () => {
     const chroma = computeChromagram(mags, SR, N);
     for (let i = 0; i < 12; i++) {
       expect(chroma[i]).toBe(0);
+    }
+  });
+});
+
+describe('harmonicProductSpectrum', () => {
+  it('preserves fundamental peak and suppresses harmonics', () => {
+    const SR = 44100;
+    const N = 4096;
+    const fundFreq = 220; // A3
+    const fundBin = Math.round(fundFreq * N / SR);
+
+    // Build a signal with fundamental + harmonics at 2x and 3x
+    const buf = new Float32Array(N);
+    for (let i = 0; i < N; i++) {
+      buf[i] = 1.0 * Math.sin(2 * Math.PI * fundFreq * i / SR)
+             + 0.5 * Math.sin(2 * Math.PI * 2 * fundFreq * i / SR)
+             + 0.3 * Math.sin(2 * Math.PI * 3 * fundFreq * i / SR);
+    }
+    hannWindow(buf);
+    const imag = new Float32Array(N);
+    fft(buf, imag);
+    const mags = magnitudeSpectrum(buf, imag);
+
+    const hps = harmonicProductSpectrum(mags, 3);
+
+    // Find peak in HPS
+    let peakBin = 0, peakVal = 0;
+    for (let i = 1; i < hps.length; i++) {
+      if (hps[i] > peakVal) { peakVal = hps[i]; peakBin = i; }
+    }
+
+    // Peak should be at or very near the fundamental bin
+    expect(Math.abs(peakBin - fundBin)).toBeLessThanOrEqual(2);
+
+    // Harmonic bins (2x, 3x) should be much weaker than the fundamental
+    const harm2Bin = Math.round(2 * fundFreq * N / SR);
+    const harm3Bin = Math.round(3 * fundFreq * N / SR);
+    expect(hps[peakBin]).toBeGreaterThan(hps[harm2Bin] * 5);
+    expect(hps[peakBin]).toBeGreaterThan(hps[harm3Bin] * 5);
+  });
+
+  it('returns same length as input', () => {
+    const mags = new Float32Array(2049);
+    for (let i = 0; i < mags.length; i++) mags[i] = Math.random();
+    const hps = harmonicProductSpectrum(mags, 3);
+    expect(hps.length).toBe(mags.length);
+  });
+
+  it('trailing bins are zeroed beyond downsampled range', () => {
+    const n = 100;
+    const mags = new Float32Array(n);
+    for (let i = 0; i < n; i++) mags[i] = 1;
+    const hps = harmonicProductSpectrum(mags, 3);
+
+    // With numHarmonics=3, limit = floor(100/3) = 33
+    // Bins 33..99 should be zero
+    for (let i = 34; i < n; i++) {
+      expect(hps[i]).toBe(0);
+    }
+  });
+
+  it('with numHarmonics=1, returns a copy of input (no downsampling)', () => {
+    const mags = new Float32Array([1, 2, 3, 4, 5]);
+    const hps = harmonicProductSpectrum(mags, 1);
+    for (let i = 0; i < mags.length; i++) {
+      expect(hps[i]).toBe(mags[i]);
     }
   });
 });

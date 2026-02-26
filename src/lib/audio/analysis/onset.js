@@ -3,16 +3,18 @@
  */
 
 /**
- * Compute spectral flux (half-wave rectified spectral difference).
+ * Compute log-compressed spectral flux (half-wave rectified).
+ * Log compression makes onset detection robust to volume changes.
  * @param {Float32Array} current - Current magnitude spectrum
  * @param {Float32Array} previous - Previous magnitude spectrum
+ * @param {number} [gamma=1000] - Log compression factor (0 = near-linear)
  * @returns {number} - Spectral flux value (>= 0)
  */
-export function spectralFlux(current, previous) {
+export function spectralFlux(current, previous, gamma = 1000) {
   if (!previous || current.length !== previous.length) return 0;
   let flux = 0;
   for (let i = 0; i < current.length; i++) {
-    const diff = current[i] - previous[i];
+    const diff = Math.log(1 + gamma * current[i]) - Math.log(1 + gamma * previous[i]);
     if (diff > 0) flux += diff; // half-wave rectified
   }
   return flux;

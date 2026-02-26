@@ -43,21 +43,28 @@ export function buildChordTemplates() {
  * @param {Float32Array} observed - L2-normalized 12-bin chromagram
  * @param {Array} templates - From buildChordTemplates()
  * @param {number} minScore - Minimum similarity threshold (default 0.65)
+ * @param {Map<number, number>} [weights] - Optional guitar weights from buildGuitarWeights()
  * @returns {Array<{ root: number, rootName: string, typeId: string, chordName: string, score: number }>}
  */
-export function matchChord(observed, templates, minScore = 0.65) {
+export function matchChord(observed, templates, minScore = 0.65, weights = null) {
   const results = [];
 
-  for (const t of templates) {
+  for (let idx = 0; idx < templates.length; idx++) {
+    const t = templates[idx];
     let dot = 0;
     for (let i = 0; i < 12; i++) dot += observed[i] * t.template[i];
-    if (dot >= minScore) {
+
+    // Apply guitar weight to score before threshold check
+    const w = weights ? (weights.get(idx) ?? 1.0) : 1.0;
+    const score = dot * w;
+
+    if (score >= minScore) {
       results.push({
         root: t.root,
         rootName: t.rootName,
         typeId: t.typeId,
         chordName: t.chordName,
-        score: Math.round(dot * 1000) / 1000
+        score: Math.round(score * 1000) / 1000
       });
     }
   }

@@ -70,6 +70,32 @@ export function magnitudeSpectrum(real, imag) {
 }
 
 /**
+ * Harmonic Product Spectrum — suppresses harmonics, emphasizes fundamentals.
+ * Downsamples the spectrum by each harmonic factor and multiplies element-wise.
+ * @param {Float32Array} magnitudes - Magnitude spectrum
+ * @param {number} numHarmonics - Number of harmonics to include (default 3)
+ * @returns {Float32Array} Product spectrum (same length as input, trailing bins zeroed)
+ */
+export function harmonicProductSpectrum(magnitudes, numHarmonics = 3) {
+  const n = magnitudes.length;
+  const hps = new Float32Array(n);
+  for (let i = 0; i < n; i++) hps[i] = magnitudes[i];
+
+  for (let h = 2; h <= numHarmonics; h++) {
+    const limit = Math.floor(n / h);
+    for (let i = 0; i < limit; i++) {
+      hps[i] *= magnitudes[i * h];
+    }
+    // Zero out bins beyond the downsampled range
+    for (let i = limit; i < n; i++) {
+      hps[i] = 0;
+    }
+  }
+
+  return hps;
+}
+
+/**
  * Fold FFT magnitude bins into 12 pitch classes (C through B).
  * Weighted by magnitude squared, L2-normalized.
  * @param {Float32Array} magnitudes - Magnitude spectrum

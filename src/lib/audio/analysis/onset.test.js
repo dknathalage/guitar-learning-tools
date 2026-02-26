@@ -11,7 +11,11 @@ describe('spectralFlux', () => {
   it('returns positive flux for increasing magnitudes', () => {
     const prev = new Float32Array([1, 1, 1, 1]);
     const curr = new Float32Array([3, 3, 3, 3]);
-    expect(spectralFlux(curr, prev)).toBe(8); // 4 bins * 2 diff
+    const flux = spectralFlux(curr, prev);
+    expect(flux).toBeGreaterThan(0);
+    // Each bin: log(1 + 1000*3) - log(1 + 1000*1) = log(3001) - log(1001)
+    const expected = 4 * (Math.log(3001) - Math.log(1001));
+    expect(flux).toBeCloseTo(expected, 10);
   });
 
   it('half-wave rectifies: decreasing bins contribute 0', () => {
@@ -23,8 +27,10 @@ describe('spectralFlux', () => {
   it('mixed increases and decreases: only increases contribute', () => {
     const prev = new Float32Array([1, 5, 1, 5]);
     const curr = new Float32Array([3, 2, 4, 1]);
-    // diffs: +2, -3, +3, -4 => only +2 and +3 = 5
-    expect(spectralFlux(curr, prev)).toBe(5);
+    const flux = spectralFlux(curr, prev);
+    // Only bins 0 (1->3) and 2 (1->4) increase; bins 1 (5->2) and 3 (5->1) decrease
+    const expected = (Math.log(3001) - Math.log(1001)) + (Math.log(4001) - Math.log(1001));
+    expect(flux).toBeCloseTo(expected, 10);
   });
 
   it('returns 0 when previous is null', () => {
@@ -36,6 +42,39 @@ describe('spectralFlux', () => {
     const curr = new Float32Array([1, 2, 3]);
     const prev = new Float32Array([1, 2]);
     expect(spectralFlux(curr, prev)).toBe(0);
+  });
+
+  it('log compression: 10x magnitude change does NOT produce 10x flux', () => {
+    const prev = new Float32Array([1, 1, 1, 1]);
+    const curr1x = new Float32Array([2, 2, 2, 2]);
+    const curr10x = new Float32Array([11, 11, 11, 11]); // 10x the increase
+
+    const flux1x = spectralFlux(curr1x, prev);
+    const flux10x = spectralFlux(curr10x, prev);
+    // Without compression, flux10x / flux1x would be exactly 10
+    // With log compression, the ratio should be much less than 10
+    expect(flux10x / flux1x).toBeLessThan(5);
+    expect(flux10x).toBeGreaterThan(flux1x);
+  });
+
+  it('gamma=0 degenerates to near-linear behavior', () => {
+    const prev = new Float32Array([1, 1, 1, 1]);
+    const curr = new Float32Array([3, 3, 3, 3]);
+    // gamma=0: log(1 + 0*x) - log(1 + 0*y) = log(1) - log(1) = 0
+    const flux = spectralFlux(curr, prev, 0);
+    expect(flux).toBe(0);
+  });
+
+  it('small gamma produces near-linear scaling', () => {
+    const prev = new Float32Array([1, 1, 1, 1]);
+    const curr1x = new Float32Array([2, 2, 2, 2]);
+    const curr10x = new Float32Array([11, 11, 11, 11]);
+
+    // With very small gamma, log(1 + gamma*x) ≈ gamma*x, so ratio ≈ linear
+    const flux1x = spectralFlux(curr1x, prev, 0.001);
+    const flux10x = spectralFlux(curr10x, prev, 0.001);
+    // The ratio should be close to 10 (linear)
+    expect(flux10x / flux1x).toBeGreaterThan(8);
   });
 });
 

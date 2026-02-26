@@ -75,6 +75,7 @@ export const DEFAULTS = Object.freeze({
     confidenceThreshold: 0.85,
     harmonicCorrectionEnabled: true,
     enableFeatures: false,
+    yinThresholdRange: Object.freeze([0.20, 0.10]),
   }),
 
   calibration: Object.freeze({
