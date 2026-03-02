@@ -1,317 +1,301 @@
 <script>
+  import { onDestroy } from 'svelte';
   import { base } from '$app/paths';
-  import ProgressRing from '$lib/components/svg/ProgressRing.svelte';
-  import { loadUnifiedMastery } from '$lib/progress.js';
-  import { TYPES, loadTypeFlags } from '$lib/learning/configs/unified.js';
-  import { migrateToUnified } from '$lib/learning/migration.js';
+  import { TonePlayer } from '$lib/audio/TonePlayer.js';
+  import { getSectionScore } from '$lib/mastery/store.svelte.js';
+  import FretboardNotes from '$lib/components/theory/FretboardNotes.svelte';
+  import IntervalExercise from '$lib/components/theory/IntervalExercise.svelte';
+  import TriadExercise from '$lib/components/theory/TriadExercise.svelte';
+  import ScaleExercise from '$lib/components/theory/ScaleExercise.svelte';
+  import SeventhChords from '$lib/components/theory/SeventhChords.svelte';
+  import ChordBuilder from '$lib/components/theory/ChordBuilder.svelte';
+  import IIVITrainer from '$lib/components/theory/IIVITrainer.svelte';
 
-  migrateToUnified();
+  function ringColor(score) {
+    if (score <= 0) return '#555';
+    if (score < 50) return '#58a6ff';
+    if (score < 90) return '#3fb950';
+    return '#d4a017';
+  }
 
-  let um = $state(loadUnifiedMastery());
-  const flags = loadTypeFlags();
+  const EXERCISES = [
+    { id: 'fretboard', label: 'Fretboard Notes', icon: 'F' },
+    { id: 'intervals', label: 'Intervals', icon: 'I' },
+    { id: 'triads', label: 'Triads', icon: 'T' },
+    { id: 'scales', label: 'Scales', icon: 'S' },
+    { id: 'sevenths', label: '7th Chords', icon: '7' },
+    { id: 'builder', label: 'Chord Builder', icon: 'B' },
+    { id: 'iiVI', label: 'ii-V-I Trainer', icon: 'P' },
+  ];
 
-  let overallPct = $derived(um ? Math.round(um.overall * 100) : 0);
+  let active = $state('fretboard');
+  let tonePlayer = new TonePlayer();
 
-  let perType = $derived.by(() => {
-    if (!um) return TYPES.map(t => {
-      const enabled = flags[t.id] !== undefined ? flags[t.id] : t.enabled;
-      return { ...t, avgPL: 0, count: 0, enabled };
-    });
-    return TYPES.map(t => {
-      const typeItems = um.items.filter(i => i.key.startsWith(t.id + ':'));
-      const avgPL = typeItems.length > 0 ? typeItems.reduce((s, i) => s + i.pL, 0) / typeItems.length : 0;
-      const enabled = flags[t.id] !== undefined ? flags[t.id] : t.enabled;
-      return { ...t, avgPL, count: typeItems.length, enabled };
-    });
+  onDestroy(() => {
+    tonePlayer.stop();
   });
 </script>
 
 <svelte:head>
-  <title>Guitar Learning Tools</title>
-  <meta name="description" content="Interactive guitar learning — master the fretboard through adaptive mic-based exercises.">
+  <title>Theory Trainer</title>
 </svelte:head>
 
-<div class="landing">
-  <header class="landing-header">
-    <h1 class="landing-title">Guitar Learning Tools</h1>
-    <p class="landing-sub">Adaptive practice for fretboard mastery</p>
-  </header>
-
-  <div class="mastery-section">
-    <div class="mastery-ring">
-      <ProgressRing percent={overallPct} color="#58A6FF" size={140} />
-      <div class="mastery-pct">{overallPct}%</div>
-    </div>
-    {#if um && um.totalItems > 0}
-      <div class="mastery-label">{um.totalItems} items practiced</div>
-    {:else}
-      <div class="mastery-label">Start practicing to track progress</div>
-    {/if}
-  </div>
-
-  <div class="type-bars">
-    {#each perType as ts}
-      <div class="type-bar" class:type-bar-disabled={!ts.enabled}>
-        <div class="type-bar-name">{ts.name}</div>
-        <div class="type-bar-track">
-          <div class="type-bar-fill" style="width:{Math.round(ts.avgPL * 100)}%"></div>
-        </div>
-        <div class="type-bar-pct">{ts.count > 0 ? Math.round(ts.avgPL * 100) + '%' : '\u2014'}</div>
-      </div>
+<div class="theory-page">
+  <!-- Sidebar (desktop) / pill row (mobile) -->
+  <nav class="sidebar" aria-label="Exercise navigation">
+    <div class="sidebar-title">Theory Trainer</div>
+    {#each EXERCISES as ex (ex.id)}
+      {@const score = getSectionScore(ex.id)}
+      {@const circ = Math.PI * 16}
+      <button
+        class="sidebar-item"
+        class:active={active === ex.id}
+        onclick={() => { active = ex.id; }}
+      >
+        <span class="sidebar-icon">{ex.icon}</span>
+        <span class="sidebar-label">{ex.label}</span>
+        <svg class="progress-ring" width="22" height="22" viewBox="0 0 22 22">
+          <circle cx="11" cy="11" r="8" fill="none" stroke="var(--bd)" stroke-width="2.5" />
+          {#if score > 0}
+            <circle cx="11" cy="11" r="8" fill="none"
+              stroke={ringColor(score)} stroke-width="2.5"
+              stroke-dasharray={circ}
+              stroke-dashoffset={circ * (1 - score / 100)}
+              stroke-linecap="round"
+              transform="rotate(-90 11 11)" />
+          {/if}
+        </svg>
+      </button>
     {/each}
-  </div>
 
-  <a href="{base}/practice" class="practice-btn">Practice</a>
-
-  <div class="secondary-links">
-    <a href="{base}/tuner" class="sec-link">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-        <circle cx="12" cy="12" r="3"/>
-      </svg>
-      Tuner
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section-label">Tools</div>
+    <a href="{base}/tuner" class="sidebar-link">
+      <span class="sidebar-icon">&#x266A;</span>
+      <span class="sidebar-label">Tuner</span>
     </a>
-    <a href="{base}/caged" class="sec-link">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <line x1="3" y1="9" x2="21" y2="9"/>
-        <line x1="9" y1="3" x2="9" y2="21"/>
-      </svg>
-      CAGED Visualizer
+    <a href="{base}/caged" class="sidebar-link">
+      <span class="sidebar-icon">C</span>
+      <span class="sidebar-label">CAGED Visualizer</span>
     </a>
-  </div>
+  </nav>
 
-  <!-- Tuner FAB -->
-  <a href="{base}/tuner" class="tuner-fab" title="Guitar Tuner">
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-      <circle cx="12" cy="12" r="3"/>
-    </svg>
-    <span class="fab-label">Tuner</span>
-  </a>
+  <!-- Main content area -->
+  <main class="content">
+    {#if active === 'fretboard'}
+      <FretboardNotes {tonePlayer} />
+    {:else if active === 'intervals'}
+      <IntervalExercise {tonePlayer} />
+    {:else if active === 'triads'}
+      <TriadExercise {tonePlayer} />
+    {:else if active === 'scales'}
+      <ScaleExercise {tonePlayer} />
+    {:else if active === 'sevenths'}
+      <SeventhChords {tonePlayer} />
+    {:else if active === 'builder'}
+      <ChordBuilder {tonePlayer} />
+    {:else if active === 'iiVI'}
+      <IIVITrainer {tonePlayer} />
+    {/if}
+  </main>
 </div>
 
 <style>
-  .landing {
-    min-height: 100vh;
-    padding: 3rem 1.5rem 5rem;
+  .theory-page {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    position: relative;
-    background:
-      radial-gradient(ellipse 80% 50% at 50% 0%, rgba(88,166,255,.04) 0%, transparent 60%),
-      var(--bg);
-  }
-
-  .landing-header {
-    text-align: center;
-    margin-bottom: 2rem;
-    opacity: 0;
-    animation: fadeUp .6s ease forwards;
-  }
-  .landing-title {
-    font-size: clamp(1.6rem, 4.5vw, 2.6rem);
-    font-weight: 900;
-    letter-spacing: -1.5px;
-    background: linear-gradient(135deg, var(--ac) 0%, #C084FC 50%, #F472B6 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    margin-bottom: .5rem;
-  }
-  .landing-sub {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: .8rem;
-    color: var(--mt);
-    letter-spacing: .5px;
-  }
-
-  .mastery-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: .75rem;
-    margin-bottom: 1.5rem;
-    opacity: 0;
-    animation: fadeUp .6s ease forwards;
-    animation-delay: .1s;
-  }
-  .mastery-ring {
-    position: relative;
-    width: 140px;
-    height: 140px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .mastery-ring :global(svg) {
-    position: absolute;
-    inset: 0;
-  }
-  .mastery-pct {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--ac);
-    z-index: 1;
-  }
-  .mastery-label {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: .7rem;
-    color: var(--mt);
-    letter-spacing: .5px;
-  }
-
-  .type-bars {
+    height: 100vh;
     width: 100%;
-    max-width: 400px;
-    display: flex;
-    flex-direction: column;
-    gap: .5rem;
-    margin-bottom: 2rem;
-    opacity: 0;
-    animation: fadeUp .6s ease forwards;
-    animation-delay: .2s;
-  }
-  .type-bar {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-  }
-  .type-bar-name {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: var(--mt);
-    width: 110px;
-    text-align: right;
-    flex-shrink: 0;
-  }
-  .type-bar-track {
-    flex: 1;
-    height: 8px;
-    background: var(--sf2);
-    border-radius: 4px;
     overflow: hidden;
   }
-  .type-bar-fill {
-    height: 100%;
-    background: var(--ac);
-    border-radius: 4px;
-    transition: width .3s;
-  }
-  .type-bar-pct {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 11px;
-    color: var(--mt);
-    width: 36px;
-    text-align: right;
-  }
-  .type-bar-disabled {
-    opacity: 0.35;
+
+  /* Sidebar */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--sf);
+    border-right: 1px solid var(--bd);
+    display: flex;
+    flex-direction: column;
+    padding: .75rem .5rem;
+    gap: .25rem;
+    overflow-y: auto;
   }
 
-  .practice-btn {
+  .sidebar-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: .85rem;
+    font-weight: 800;
+    color: var(--tx);
+    letter-spacing: -.5px;
+    padding: .2rem .5rem .5rem;
+    border-bottom: 1px solid var(--bd);
+    margin-bottom: .35rem;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .45rem .55rem;
+    border-radius: 8px;
+    border: none;
+    background: none;
+    color: var(--mt);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .15s;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .sidebar-item:hover {
+    background: var(--sf2);
+    color: var(--tx);
+  }
+  .sidebar-item.active {
+    background: rgba(88, 166, 255, .1);
+    color: var(--ac);
+  }
+
+  .sidebar-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: .8rem 3rem;
-    border-radius: 28px;
-    border: 2px solid var(--ac);
-    background: rgba(88,166,255,.1);
-    color: var(--ac);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 1.1rem;
-    font-weight: 700;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    text-decoration: none;
-    cursor: pointer;
-    transition: all .2s;
-    margin-bottom: 1.5rem;
-    opacity: 0;
-    animation: fadeUp .6s ease forwards;
-    animation-delay: .3s;
-  }
-  .practice-btn:hover {
-    background: rgba(88,166,255,.2);
-    box-shadow: 0 4px 24px rgba(88,166,255,.2);
-    transform: translateY(-2px);
-  }
-
-  .secondary-links {
-    display: flex;
-    gap: 1rem;
-    opacity: 0;
-    animation: fadeUp .6s ease forwards;
-    animation-delay: .4s;
-  }
-  .sec-link {
-    display: flex;
-    align-items: center;
-    gap: .4rem;
-    padding: .5rem 1rem;
-    background: var(--sf);
-    border: 1px solid var(--bd);
-    border-radius: 12px;
-    text-decoration: none;
-    color: var(--mt);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: .8rem;
-    font-weight: 600;
-    transition: all .15s;
-  }
-  .sec-link:hover {
-    border-color: var(--ac);
-    color: var(--ac);
-    transform: translateY(-1px);
-  }
-
-  /* Tuner FAB */
-  .tuner-fab {
-    position: fixed;
-    bottom: 1.5rem;
-    right: 1.5rem;
-    width: auto;
-    height: 44px;
-    border-radius: 22px;
-    background: var(--sf);
-    border: 1.5px solid var(--bd);
-    color: var(--mt);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: .4rem;
-    padding: 0 1rem 0 .8rem;
-    text-decoration: none;
-    box-shadow: 0 4px 20px rgba(0,0,0,.4);
-    transition: all .2s;
-    z-index: 100;
-    font-family: 'JetBrains Mono', monospace;
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--sf2);
     font-size: .7rem;
-    font-weight: 600;
-    letter-spacing: .5px;
-    text-transform: uppercase;
+    font-weight: 700;
+    flex-shrink: 0;
   }
-  .tuner-fab:hover {
-    border-color: var(--ac);
+  .sidebar-item.active .sidebar-icon {
+    background: rgba(88, 166, 255, .18);
     color: var(--ac);
-    box-shadow: 0 4px 24px rgba(88,166,255,.15);
-    transform: translateY(-2px);
-  }
-  .fab-label {
-    line-height: 1;
   }
 
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(12px); }
-    to { opacity: 1; transform: none; }
+  .progress-ring {
+    margin-left: auto;
+    flex-shrink: 0;
   }
 
-  @media (max-width: 580px) {
-    .landing { padding: 2rem .75rem 5rem; }
-    .type-bar-name { width: 80px; font-size: 10px; }
-    .practice-btn { padding: .6rem 2rem; font-size: .95rem; }
-    .tuner-fab { bottom: 1rem; right: 1rem; }
+  .sidebar-divider {
+    height: 1px;
+    background: var(--bd);
+    margin: .5rem .25rem;
+  }
+
+  .sidebar-section-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .6rem;
+    font-weight: 700;
+    color: var(--mt);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: .1rem .5rem .3rem;
+  }
+
+  .sidebar-link {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .45rem .55rem;
+    border-radius: 8px;
+    color: var(--mt);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: .78rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .sidebar-link:hover {
+    background: var(--sf2);
+    color: var(--tx);
+  }
+
+  /* Main content */
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+  }
+
+  /* Mobile: sidebar becomes horizontal pill row */
+  @media (max-width: 768px) {
+    .theory-page {
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .sidebar {
+      width: 100%;
+      flex-direction: row;
+      border-right: none;
+      border-bottom: 1px solid var(--bd);
+      padding: .5rem;
+      gap: .4rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      flex-shrink: 0;
+      align-items: center;
+    }
+    .sidebar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .sidebar-title {
+      display: none;
+    }
+
+    .sidebar-divider {
+      width: 1px;
+      height: 20px;
+      margin: 0 .25rem;
+      flex-shrink: 0;
+    }
+
+    .sidebar-section-label {
+      display: none;
+    }
+
+    .sidebar-item {
+      flex-shrink: 0;
+      padding: .35rem .6rem;
+      border-radius: 16px;
+      font-size: .72rem;
+      border: 1px solid var(--bd);
+    }
+    .sidebar-item.active {
+      border-color: var(--ac);
+    }
+
+    .sidebar-link {
+      flex-shrink: 0;
+      padding: .35rem .6rem;
+      border-radius: 16px;
+      font-size: .72rem;
+      border: 1px solid var(--bd);
+    }
+    .sidebar-link:hover {
+      border-color: var(--ac);
+      color: var(--ac);
+    }
+
+    .sidebar-icon {
+      display: none;
+    }
+
+    .progress-ring {
+      display: none;
+    }
+
+    .content {
+      flex: 1;
+      min-height: 0;
+    }
   }
 </style>

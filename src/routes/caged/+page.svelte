@@ -1,10 +1,6 @@
 <script>
-  import { onMount } from 'svelte';
   import { base } from '$app/paths';
-  import { markVisited } from '$lib/progress.js';
   import { NOTES } from '$lib/constants/music.js';
-
-  onMount(() => markVisited('caged-visualizer'));
   import { CHORD_CONFIG, setTuning, adaptShapeToTuning, getBaseFret, resolve } from '$lib/music/chords.js';
   import ChordDiagram from '$lib/components/svg/ChordDiagram.svelte';
   import NeckVisualization from '$lib/components/svg/NeckVisualization.svelte';

@@ -4,8 +4,25 @@ import { NoiseCalibrator } from './analysis/calibration.js';
 import { detectArticulation } from './analysis/features.js';
 import { buildChordTemplates, matchChord } from './analysis/templates.js';
 import { OnsetDetector, IOITracker } from './analysis/onset.js';
-import { CONSTANTS } from '../learning/constants.js';
-import { DEFAULTS } from '../learning/defaults.js';
+/** Audio constants and defaults previously from learning/ modules (removed with old learning engine). */
+const AUDIO_CONSTANTS = {
+  FFT_SIZE: 4096,
+  FREQ_MIN: 50,
+  FREQ_MAX: 1400,
+};
+const AUDIO_DEFAULTS = {
+  stableFrames: 3,
+  rmsThreshold: 0.01,
+  harmonicCorrectionEnabled: true,
+  silenceDebounceFrames: 5,
+  yinThreshold: 0.15,
+  confidenceThreshold: 0.85,
+  enableFeatures: false,
+};
+const CALIBRATION_DEFAULTS = {
+  targetFrames: 100,
+  safetyMultiplier: 1.5,
+};
 import { StableNoteTracker } from './StableNoteTracker.js';
 
 class ChordDetector {
@@ -80,14 +97,14 @@ export class AudioManager extends EventTarget {
     this.buffer = null;
     this.cachedSampleRate = null;
     this._params = params;
-    this._tracker = new StableNoteTracker(params?.audio?.stableFrames ?? DEFAULTS.audio.stableFrames);
-    this._rmsThreshold = params?.audio?.rmsThreshold ?? DEFAULTS.audio.rmsThreshold;
-    this._harmonicCorrection = params?.audio?.harmonicCorrectionEnabled ?? DEFAULTS.audio.harmonicCorrectionEnabled;
+    this._tracker = new StableNoteTracker(params?.audio?.stableFrames ?? AUDIO_DEFAULTS.stableFrames);
+    this._rmsThreshold = params?.audio?.rmsThreshold ?? AUDIO_DEFAULTS.rmsThreshold;
+    this._harmonicCorrection = params?.audio?.harmonicCorrectionEnabled ?? AUDIO_DEFAULTS.harmonicCorrectionEnabled;
     this._useWorklet = false;
     this._workletNode = null;
     this._calibrator = null;
     this._nullFrames = 0;
-    this._silenceDebounce = params?.audio?.silenceDebounceFrames ?? DEFAULTS.audio.silenceDebounceFrames;
+    this._silenceDebounce = params?.audio?.silenceDebounceFrames ?? AUDIO_DEFAULTS.silenceDebounceFrames;
     this._chordDetector = new ChordDetector();
     this._onsetDetector = new OnsetDetector();
     this._ioiTracker = new IOITracker();
@@ -115,12 +132,12 @@ export class AudioManager extends EventTarget {
         this._workletNode.port.postMessage({
           type: 'configure',
           config: {
-            yinThreshold: this._params?.audio?.yinThreshold ?? DEFAULTS.audio.yinThreshold,
-            confidenceThreshold: this._params?.audio?.confidenceThreshold ?? DEFAULTS.audio.confidenceThreshold,
+            yinThreshold: this._params?.audio?.yinThreshold ?? AUDIO_DEFAULTS.yinThreshold,
+            confidenceThreshold: this._params?.audio?.confidenceThreshold ?? AUDIO_DEFAULTS.confidenceThreshold,
             rmsThreshold: this._rmsThreshold,
             sampleRate: ctx.sampleRate,
             harmonicCorrection: this._harmonicCorrection,
-            enableFeatures: this._params?.audio?.enableFeatures ?? DEFAULTS.audio.enableFeatures,
+            enableFeatures: this._params?.audio?.enableFeatures ?? AUDIO_DEFAULTS.enableFeatures,
             enableChromagram: this._params?.audio?.enableChromagram ?? false,
             enableOnset: this._params?.audio?.enableOnset ?? false,
           }
@@ -131,7 +148,7 @@ export class AudioManager extends EventTarget {
         // Fallback to RAF with AnalyserNode
         console.warn('AudioWorklet not available, falling back to RAF:', workletErr.message);
         const an = ctx.createAnalyser();
-        an.fftSize = CONSTANTS.audio.FFT_SIZE;
+        an.fftSize = AUDIO_CONSTANTS.FFT_SIZE;
         src.connect(an);
         this.analyser = an;
         this.buffer = new Float32Array(an.fftSize);
@@ -219,8 +236,8 @@ export class AudioManager extends EventTarget {
   }
 
   calibrate(params) {
-    const targetFrames = params?.targetFrames ?? DEFAULTS.calibration.targetFrames;
-    const safetyMultiplier = params?.safetyMultiplier ?? DEFAULTS.calibration.safetyMultiplier;
+    const targetFrames = params?.targetFrames ?? CALIBRATION_DEFAULTS.targetFrames;
+    const safetyMultiplier = params?.safetyMultiplier ?? CALIBRATION_DEFAULTS.safetyMultiplier;
 
     if (this._useWorklet) {
       this._workletNode.port.postMessage({
@@ -234,8 +251,8 @@ export class AudioManager extends EventTarget {
   }
 
   _startRafLoop() {
-    const FREQ_MIN = CONSTANTS.audio.FREQ_MIN;
-    const FREQ_MAX = CONSTANTS.audio.FREQ_MAX;
+    const FREQ_MIN = AUDIO_CONSTANTS.FREQ_MIN;
+    const FREQ_MAX = AUDIO_CONSTANTS.FREQ_MAX;
     const loop = () => {
       if (!this.analyser) return;
       this.analyser.getFloatTimeDomainData(this.buffer);

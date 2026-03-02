@@ -1,5 +1,11 @@
 import { A4, NOTES } from '$lib/constants/music.js';
-import { DEFAULTS } from '../learning/defaults.js';
+
+/** Audio defaults previously from learning/defaults.js (removed with old learning engine). */
+const AUDIO_DEFAULTS = {
+  yinThreshold: 0.15,
+  yinThresholdRange: [0.20, 0.10],
+  confidenceThreshold: 0.85
+};
 
 export function semiToFreq(semi) {
   return A4 * Math.pow(2, semi / 12);
@@ -26,7 +32,7 @@ export function preEmphasis(frame, alpha = 0.97) {
 
 /** Maps RMS to an adaptive YIN threshold in [conservative, aggressive] range. */
 export function adaptiveYinThreshold(rmsValue, rmsThreshold) {
-  const range = DEFAULTS.audio.yinThresholdRange;
+  const range = AUDIO_DEFAULTS.yinThresholdRange;
   const conservative = range[0]; // 0.20
   const aggressive = range[1];   // 0.10
 
@@ -45,8 +51,8 @@ export function adaptiveYinThreshold(rmsValue, rmsThreshold) {
  * Returns { hz, confidence } or null.
  */
 export function yinMultiCandidate(buf, sr, params, prevFreq = null, K = 5) {
-  const yinThreshold = params?.audio?.yinThreshold ?? DEFAULTS.audio.yinThreshold;
-  const confidenceThreshold = params?.audio?.confidenceThreshold ?? DEFAULTS.audio.confidenceThreshold;
+  const yinThreshold = params?.audio?.yinThreshold ?? AUDIO_DEFAULTS.yinThreshold;
+  const confidenceThreshold = params?.audio?.confidenceThreshold ?? AUDIO_DEFAULTS.confidenceThreshold;
 
   const halfLen = Math.floor(buf.length / 2);
   if (halfLen < 3) return null;

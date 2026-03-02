@@ -7,40 +7,30 @@ SvelteKit SPA routes. Static adapter (`prerender = true`) for GitHub Pages deplo
 ```
 +layout.js            # prerender = true (static export)
 +layout.svelte        # Root layout: Toast container + children
-+page.svelte          # Home — mastery overview, nav to Practice/Tuner
++page.svelte          # Theory Trainer — 7 interactive exercises + tool links
 caged/
   +page.svelte        # CAGED Chord Visualizer
-practice/
-  +layout.js          # prerender = true
-  +page.svelte        # Main practice interface (unified learning engine)
 tuner/
   +page.svelte        # Chromatic guitar tuner
 ```
 
 ## Pages
 
-### Home (`+page.svelte`)
+### Home / Theory Trainer (`+page.svelte`)
 
-Landing page with:
-- Overall mastery ring (from `loadUnifiedMastery()`)
-- Per-exercise-type progress bars
-- Navigation to Practice and Tuner
-- Floating Tuner FAB button
+Interactive music theory exercise hub with sidebar navigation (desktop) or horizontal pill row (mobile). Seven exercises, each with explore and/or quiz modes:
 
-### Practice (`practice/+page.svelte`)
+- **Fretboard Notes** — find notes on the fretboard
+- **Intervals** — learn and identify intervals
+- **Triads** — explore and quiz triad types
+- **Scales** — visualize scales with diatonic chords
+- **7th Chords** — learn seventh chord voicings
+- **Chord Builder** — construct chords from intervals
+- **ii-V-I Trainer** — practice ii-V-I progressions in all keys
 
-Main adaptive practice interface. Two states:
+Uses `TonePlayer` for audio playback (no mic required). Components live in `$lib/components/theory/`.
 
-**Idle:** mastery display, exercise type progress bars, start button
-
-**Active:** challenge component + pitch display + controls. Renders the appropriate challenge component based on the learning engine's selected exercise type.
-
-Stats panels (expandable):
-- SESSION: question count, accuracy, streak
-- ENGINE: theta, pL distribution, exploration/exploitation balance
-- COVERAGE: string × zone heatmap
-
-Side panel: `LearningDashboard` with full stats.
+Sidebar also links to the Tuner and CAGED Visualizer tools.
 
 ### CAGED Visualizer (`caged/+page.svelte`)
 
@@ -65,5 +55,16 @@ Chromatic guitar tuner:
 
 - All routes use `{ base }` from `$app/paths` for internal links (required for GitHub Pages subpath)
 - Mic-based pages create `AudioManager` in `onMount` and clean up in `onDestroy`
-- Learning engine state persists in `localStorage` via `gl_learn_practice` key
-- Exercise progress persists via `gl_progress` key
+
+### Progress Rings & Mastery Integration
+
+The Theory Trainer sidebar shows per-exercise mastery via inline SVG progress rings (22px, `r=8`). `getSectionScore(sectionId)` from `$lib/mastery/store.svelte.js` drives the arc fill. Color progression by score:
+
+| Score | Color | Hex |
+|-------|-------|-----|
+| 0 | gray | `#555` |
+| 1-49 | blue | `#58a6ff` |
+| 50-89 | green | `#3fb950` |
+| 90-100 | gold | `#d4a017` |
+
+Progress rings are hidden on mobile (pill row layout).

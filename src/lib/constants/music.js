@@ -41,6 +41,7 @@ export const CHORD_TYPES = [
   {id:'dim7', name:'Dim 7',  sym:'\u00b07', iv:[0,3,6,9], fm:['R','\u266d3','\u266d5','\u266d\u266d7']},
   {id:'aug',  name:'Aug',    sym:'+',    iv:[0,4,8],    fm:['R','3','#5']},
   {id:'add9', name:'Add 9',  sym:'add9', iv:[0,4,7,14], fm:['R','3','5','9']},
+  {id:'m7b5', name:'Min7\u266d5', sym:'m7\u266d5', iv:[0,3,6,10], fm:['R','\u266d3','\u266d5','\u266d7']},
   {id:'5',    name:'Power',  sym:'5',    iv:[0,7],      fm:['R','5']}
 ];
 
@@ -60,3 +61,5 @@ export const MODES = [
   {id:'aeolian',    name:'Aeolian',    degree:6, iv:[0,2,3,5,7,8,10], chars:'\u266b3, \u266b6, \u266b7'},
   {id:'locrian',    name:'Locrian',    degree:7, iv:[0,1,3,5,6,8,10], chars:'\u266b2, \u266b3, \u266b5, \u266b6, \u266b7'}
 ];
+
+export const HARMONIZED_MAJOR = ['maj','min','min','maj','maj','min','dim'];

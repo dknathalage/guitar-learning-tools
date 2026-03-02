@@ -7,23 +7,21 @@ src/lib/
   constants/    # Music theory data — notes, tunings, intervals, chords, scales, modes
   audio/        # Audio analysis pipeline — YIN, Kalman, CQT, chord/onset detection
   music/        # Fretboard math, CAGED chord resolution, SVG rendering
-  learning/     # Adaptive engine — BKT, FSRS, theta, drills, persistence
-  components/   # Svelte 5 UI — challenge views, SVG widgets, dashboard
+  components/   # Svelte 5 UI — theory exercises, SVG widgets, Toast
+  mastery/      # Mastery algorithm — scoring, item selection, localStorage persistence
   stores/       # Svelte rune stores (notifications)
-  progress.js   # localStorage exercise progress tracking
-  skilltree.js  # 5-chapter curriculum definition with dependencies
 src/routes/
-  practice/     # Main adaptive practice interface
+  +page.svelte  # Theory Trainer — 7 interactive exercises + tool links
   caged/        # CAGED Chord Visualizer
   tuner/        # Chromatic Guitar Tuner
 ```
 
 Detailed documentation lives in feature-folder `CLAUDE.md` files:
 - `src/lib/audio/CLAUDE.md` — pitch detection, chord recognition, onset detection, worklet architecture
-- `src/lib/learning/CLAUDE.md` — knowledge models, item selection, drill systems, persistence
 - `src/lib/constants/CLAUDE.md` — music theory constants, tunings, intervals, chord types
 - `src/lib/music/CLAUDE.md` — fretboard geometry, CAGED resolution, SVG rendering
-- `src/lib/components/CLAUDE.md` — challenge components, SVG widgets, dashboard
+- `src/lib/components/CLAUDE.md` — theory exercises, SVG widgets, visualization components
+- `src/lib/mastery/CLAUDE.md` — mastery scoring, item selection, persistence
 - `src/routes/CLAUDE.md` — page routes, shared patterns, state management
 
 ### Code Conventions
