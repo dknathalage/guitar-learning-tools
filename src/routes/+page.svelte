@@ -8,9 +8,13 @@
   import CheckItem from '$lib/components/guide/CheckItem.svelte';
 
   let scrollPct = $state(0);
-  let currentPhase = $state(0);
+  let currentPhase = $state<number | string>(0);
 
-  const PHASES = [
+  const PHASES: Array<{ n: number | string; name: string }> = [
+    { n: '0A', name: 'Setup & Physical' },
+    { n: '0B', name: 'Reading Tab' },
+    { n: '0C', name: 'Rhythm & Strumming' },
+    { n: '0D', name: 'Power Chords' },
     { n: 1, name: 'Notes on Fretboard' },
     { n: 2, name: 'How Chords Are Built' },
     { n: 3, name: 'CAGED System' },
@@ -24,7 +28,7 @@
     { n: 11, name: 'All Together' },
   ];
 
-  function scrollToPhase(n: number) {
+  function scrollToPhase(n: number | string) {
     const el = document.getElementById(`phase-${n}`);
     if (el) el.scrollIntoView({ behavior: 'smooth' });
   }
@@ -36,10 +40,10 @@
       scrollPct = total > 0 ? (el.scrollTop / total) * 100 : 0;
 
       // find current phase
-      for (let i = PHASES.length; i >= 1; i--) {
-        const el2 = document.getElementById(`phase-${i}`);
+      for (let i = PHASES.length - 1; i >= 0; i--) {
+        const el2 = document.getElementById(`phase-${PHASES[i].n}`);
         if (el2 && el2.getBoundingClientRect().top <= 120) {
-          currentPhase = i;
+          currentPhase = PHASES[i].n;
           break;
         }
       }
@@ -112,20 +116,20 @@
 <section class="section">
   <h2 class="section-title">Your Roadmap</h2>
   <div class="diagram-wrap">
-    <svg viewBox="0 0 300 520" width="100%" style="display:block;max-width:360px;margin:0 auto" role="img" aria-label="Roadmap of 11 phases">
+    <svg viewBox="0 0 300 730" width="100%" style="display:block;max-width:360px;margin:0 auto" role="img" aria-label="Roadmap of 15 phases">
       <!-- Connection lines -->
-      {#each Array(10) as _, i}
+      {#each Array(14) as _, i}
         <line x1="150" y1={40 + i*46 + 22} x2="150" y2={40 + (i+1)*46 - 8} stroke="#9CA3AF" stroke-width="2" stroke-dasharray="4,3"/>
       {/each}
       <!-- Phase nodes -->
-      {#each PHASES as ph}
-        {@const y = 40 + (ph.n - 1) * 46}
-        {@const color = ph.n <= 4 ? '#16A34A' : ph.n <= 7 ? '#D97706' : '#DC2626'}
+      {#each PHASES as ph, i}
+        {@const y = 40 + i * 46}
+        {@const color = i < 4 ? '#7C3AED' : i < 8 ? '#16A34A' : i < 11 ? '#D97706' : '#DC2626'}
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <g onclick={() => scrollToPhase(ph.n)} style="cursor:pointer">
           <circle cx="150" cy={y} r="20" fill={color} opacity="0.9"/>
-          <text x="150" y={y + 5} text-anchor="middle" font-size="12" font-weight="700" fill="white">{ph.n}</text>
+          <text x="150" y={y + 5} text-anchor="middle" font-size="10" font-weight="700" fill="white">{ph.n}</text>
           <text x="178" y={y + 4} text-anchor="start" font-size="10" fill="currentColor" opacity="0.8">{ph.name}</text>
         </g>
       {/each}
@@ -165,6 +169,706 @@
       <svg width="60" height="20"><text x="10" y="14" font-size="13" fill="currentColor">×</text><text x="24" y="14" font-size="9" fill="currentColor">= Muted</text></svg>
     </div>
   </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     PHASE 0A: Setup & Physical Fundamentals
+════════════════════════════════════════════════════ -->
+<section class="section phase" id="phase-0A">
+  <div class="phase-header" style="--accent:#7C3AED">
+    <span class="phase-num">Phase 0A</span>
+    <h2 class="phase-title">Setup & Physical Fundamentals</h2>
+  </div>
+
+  <Block type="concept">
+    <p>Your body is the first instrument. Bad posture causes injuries that end progress permanently. Before you play a single note, learn how to hold the guitar.</p>
+  </Block>
+
+  <Block type="diagram" title="SEATED POSTURE — WRONG VS RIGHT">
+    <svg viewBox="0 0 340 180" width="100%" style="display:block" role="img" aria-label="Seated posture diagram">
+      <!-- WRONG side -->
+      <text x="85" y="14" text-anchor="middle" font-size="11" fill="#DC2626" font-weight="700">✗ WRONG</text>
+      <!-- hunched body -->
+      <ellipse cx="85" cy="110" rx="22" ry="32" fill="none" stroke="#DC2626" stroke-width="1.5" opacity="0.7"/>
+      <!-- head -->
+      <circle cx="85" cy="68" r="12" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <!-- neck hunched forward -->
+      <line x1="85" y1="80" x2="85" y2="92" stroke="currentColor" stroke-width="2"/>
+      <!-- hunched shoulders arc -->
+      <path d="M63,92 Q85,88 107,92" fill="none" stroke="#DC2626" stroke-width="2"/>
+      <!-- guitar flat on lap -->
+      <rect x="55" y="118" width="60" height="18" rx="5" fill="none" stroke="#DC2626" stroke-width="1.5" opacity="0.7"/>
+      <!-- neck flat -->
+      <line x1="55" y1="127" x2="20" y2="127" stroke="#DC2626" stroke-width="3" stroke-linecap="round"/>
+      <!-- annotations -->
+      <text x="10" y="140" font-size="8" fill="#DC2626">neck flat</text>
+      <text x="62" y="88" font-size="8" fill="#DC2626">hunched</text>
+
+      <!-- Divider -->
+      <line x1="170" y1="10" x2="170" y2="175" stroke="currentColor" stroke-width="1" stroke-dasharray="4,3" opacity="0.3"/>
+
+      <!-- RIGHT side -->
+      <text x="255" y="14" text-anchor="middle" font-size="11" fill="#16A34A" font-weight="700">✓ RIGHT</text>
+      <!-- upright body -->
+      <rect x="233" y="90" width="44" height="60" rx="6" fill="none" stroke="#16A34A" stroke-width="1.5" opacity="0.7"/>
+      <!-- head -->
+      <circle cx="255" cy="68" r="12" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <!-- straight neck -->
+      <line x1="255" y1="80" x2="255" y2="90" stroke="currentColor" stroke-width="2"/>
+      <!-- level shoulders -->
+      <line x1="233" y1="92" x2="277" y2="92" stroke="#16A34A" stroke-width="2"/>
+      <!-- guitar on right leg -->
+      <rect x="226" y="118" width="58" height="16" rx="5" fill="none" stroke="#16A34A" stroke-width="1.5" opacity="0.7"/>
+      <!-- neck angled up -->
+      <line x1="226" y1="120" x2="195" y2="98" stroke="#16A34A" stroke-width="3" stroke-linecap="round"/>
+      <!-- annotations -->
+      <text x="176" y="95" font-size="8" fill="#16A34A">neck up</text>
+      <text x="276" y="89" font-size="8" fill="#16A34A">relaxed</text>
+      <text x="276" y="98" font-size="8" fill="#16A34A">shoulder</text>
+      <!-- wrist label -->
+      <text x="215" y="170" font-size="8" fill="#16A34A">wrist straight</text>
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="PICK GRIP — CORRECT &amp; MISTAKES">
+    <svg viewBox="0 0 340 140" width="100%" style="display:block" role="img" aria-label="Pick grip diagram">
+      <!-- Correct grip -->
+      <text x="60" y="14" text-anchor="middle" font-size="10" fill="#16A34A" font-weight="700">✓ CORRECT</text>
+      <!-- thumb -->
+      <ellipse cx="50" cy="55" rx="14" ry="22" fill="none" stroke="currentColor" stroke-width="1.5" transform="rotate(-20,50,55)"/>
+      <!-- index finger -->
+      <ellipse cx="75" cy="48" rx="12" ry="20" fill="none" stroke="currentColor" stroke-width="1.5" transform="rotate(15,75,48)"/>
+      <!-- pick -->
+      <polygon points="58,62 70,56 64,78" fill="#F59E0B" stroke="#D97706" stroke-width="1.5"/>
+      <!-- ~1cm label -->
+      <line x1="63" y1="80" x2="63" y2="70" stroke="#16A34A" stroke-width="1" stroke-dasharray="2,2"/>
+      <text x="40" y="90" font-size="8" fill="#16A34A">~1cm tip</text>
+      <text x="32" y="100" font-size="8" fill="#16A34A">loose grip</text>
+
+      <!-- Mistake 1 -->
+      <text x="160" y="14" text-anchor="middle" font-size="9" fill="#DC2626" font-weight="700">✗ Too much tip</text>
+      <polygon points="148,50 165,44 158,80" fill="#DC2626" stroke="#991B1B" stroke-width="1.5" opacity="0.7"/>
+      <ellipse cx="148" cy="42" rx="13" ry="20" fill="none" stroke="currentColor" stroke-width="1.5" transform="rotate(-20,148,42)"/>
+      <ellipse cx="172" cy="36" rx="11" ry="18" fill="none" stroke="currentColor" stroke-width="1.5" transform="rotate(15,172,36)"/>
+
+      <!-- Mistake 2 -->
+      <text x="260" y="14" text-anchor="middle" font-size="9" fill="#DC2626" font-weight="700">✗ Fingertip</text>
+      <polygon points="252,56 266,54 260,74" fill="#DC2626" stroke="#991B1B" stroke-width="1.5" opacity="0.7"/>
+      <ellipse cx="248" cy="46" rx="11" ry="18" fill="none" stroke="currentColor" stroke-width="1.5" transform="rotate(-35,248,46)"/>
+      <ellipse cx="270" cy="44" rx="10" ry="16" fill="none" stroke="currentColor" stroke-width="1.5" transform="rotate(5,270,44)"/>
+      <text x="240" y="100" font-size="8" fill="#DC2626">use pad not tip</text>
+      <text x="235" y="110" font-size="8" fill="#DC2626">of index finger</text>
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="FRETTING HAND — THUMB BEHIND NECK">
+    <svg viewBox="0 0 340 150" width="100%" style="display:block" role="img" aria-label="Fretting hand position diagram">
+      <!-- WRONG -->
+      <text x="80" y="14" text-anchor="middle" font-size="11" fill="#DC2626" font-weight="700">✗ WRONG — Thumb over</text>
+      <!-- neck rectangle -->
+      <rect x="30" y="40" width="100" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+      <!-- thumb gripping over top -->
+      <ellipse cx="80" cy="34" rx="18" ry="10" fill="none" stroke="#DC2626" stroke-width="2" transform="rotate(10,80,34)"/>
+      <text x="65" y="28" font-size="8" fill="#DC2626">thumb over</text>
+      <!-- fingers -->
+      {#each [40, 52, 64, 76] as fx, fi}
+        <ellipse cx={fx+10} cy={75} rx={7} ry={14} fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.5"/>
+      {/each}
+      <!-- palm touching -->
+      <rect x="30" y="55" width="90" height="12" rx="4" fill="#DC2626" opacity="0.15"/>
+      <text x="45" y="80" font-size="8" fill="#DC2626">palm on neck</text>
+
+      <!-- Divider -->
+      <line x1="170" y1="10" x2="170" y2="145" stroke="currentColor" stroke-width="1" stroke-dasharray="4,3" opacity="0.3"/>
+
+      <!-- RIGHT -->
+      <text x="255" y="14" text-anchor="middle" font-size="11" fill="#16A34A" font-weight="700">✓ RIGHT — Thumb behind</text>
+      <!-- neck rectangle -->
+      <rect x="200" y="40" width="100" height="28" rx="4" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+      <!-- thumb behind neck (bottom) -->
+      <ellipse cx="250" cy="78" rx="16" ry="9" fill="none" stroke="#16A34A" stroke-width="2" transform="rotate(-5,250,78)"/>
+      <text x="234" y="92" font-size="8" fill="#16A34A">thumb behind</text>
+      <!-- curved fingers -->
+      {#each [210, 222, 234, 246] as fx}
+        <path d="M{fx+7},40 Q{fx+14},28 {fx+18},40" fill="none" stroke="#16A34A" stroke-width="1.5" opacity="0.7"/>
+      {/each}
+      <!-- wrist dropped label -->
+      <text x="210" y="115" font-size="8" fill="#16A34A">wrist dropped</text>
+      <text x="210" y="125" font-size="8" fill="#16A34A">palm off neck</text>
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="WRIST POSITION — SAFE VS INJURY RISK">
+    <svg viewBox="0 0 280 100" width="100%" style="display:block" role="img" aria-label="Wrist safety diagram">
+      <!-- Bent wrist -->
+      <text x="70" y="14" text-anchor="middle" font-size="11" fill="#DC2626" font-weight="700">⚠ INJURY RISK</text>
+      <!-- arm -->
+      <rect x="20" y="40" width="60" height="16" rx="5" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+      <!-- bent wrist -->
+      <path d="M80,48 Q96,50 94,65 Q92,80 110,80" fill="none" stroke="#DC2626" stroke-width="3" stroke-linecap="round"/>
+      <text x="55" y="95" font-size="9" fill="#DC2626">sharp bend = tendinitis</text>
+
+      <!-- Divider -->
+      <line x1="150" y1="10" x2="150" y2="95" stroke="currentColor" stroke-width="1" stroke-dasharray="4,3" opacity="0.3"/>
+
+      <!-- Straight wrist -->
+      <text x="220" y="14" text-anchor="middle" font-size="11" fill="#16A34A" font-weight="700">✓ SAFE</text>
+      <!-- arm -->
+      <rect x="165" y="40" width="60" height="16" rx="5" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+      <!-- straight continuation -->
+      <rect x="225" y="40" width="40" height="16" rx="5" fill="none" stroke="#16A34A" stroke-width="2" opacity="0.7"/>
+      <text x="165" y="95" font-size="9" fill="#16A34A">straight line = no strain</text>
+    </svg>
+  </Block>
+
+  <Block type="tip">
+    <p>Set a timer for 2 minutes when you start playing. Check your shoulder — is it raised? Drop it. Tension is invisible until it causes pain.</p>
+  </Block>
+
+  <Block type="avoid">
+    <p>Never play through pain. Stop, shake out your hands, and adjust your position. Repetitive strain injuries can sideline you for months.</p>
+  </Block>
+
+  <Block type="dothis">
+    <p>Before each practice session: stretch fingers gently (fan them out, hold 5 sec). Sit in front of a mirror. Compare your posture to the diagrams above.</p>
+  </Block>
+
+  <Block type="check">
+    <CheckItem id="0A-thumb" label="Thumb behind neck (not gripping over the top)" />
+    <CheckItem id="0A-pick" label="Pick grip loose — not a death-grip" />
+    <CheckItem id="0A-shoulder" label="Shoulder relaxed and dropped" />
+    <CheckItem id="0A-wrist" label="Wrist straight (not sharply bent at either hand)" />
+  </Block>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     PHASE 0B: How to Read Guitar Tab
+════════════════════════════════════════════════════ -->
+<section class="section phase" id="phase-0B">
+  <div class="phase-header" style="--accent:#7C3AED">
+    <span class="phase-num">Phase 0B</span>
+    <h2 class="phase-title">How to Read Guitar Tab</h2>
+  </div>
+
+  <Block type="concept">
+    <p>Tab = a map of the fretboard. 6 lines = 6 strings (bottom line = low E string 6, top line = high e string 1). Numbers = which fret to press. 0 = open string.</p>
+  </Block>
+
+  <Block type="diagram" title="TAB STAFF EXPLAINED">
+    <svg viewBox="0 0 480 120" width="100%" style="display:block" role="img" aria-label="Tab staff diagram">
+      {#if true}
+      {@const STR_LABELS = ['e','B','G','D','A','E']}
+      {@const STR_Y = [20, 34, 48, 62, 76, 90]}
+      <!-- String lines -->
+      {#each STR_Y as y, i}
+        <line x1="40" y1={y} x2="460" y2={y} stroke="currentColor" stroke-width={i >= 4 ? 1.5 : 1} opacity="0.5"/>
+        <text x="28" y={y + 4} text-anchor="middle" font-size="9" fill="currentColor" font-weight="700">{STR_LABELS[i]}</text>
+      {/each}
+      <!-- Border top/bottom -->
+      <line x1="40" y1="12" x2="460" y2="12" stroke="currentColor" stroke-width="2.5" opacity="0.7"/>
+      <line x1="40" y1="98" x2="460" y2="98" stroke="currentColor" stroke-width="2.5" opacity="0.7"/>
+      <!-- Open string example -->
+      <text x="80" y="78" text-anchor="middle" font-size="14" fill="#16A34A" font-weight="700">0</text>
+      <text x="80" y="64" text-anchor="middle" font-size="14" fill="#16A34A" font-weight="700">0</text>
+      <!-- Arrow label open -->
+      <line x1="80" y1="100" x2="80" y2="110" stroke="#16A34A" stroke-width="1.5"/>
+      <text x="55" y="118" font-size="8" fill="#16A34A">0 = open string</text>
+      <!-- Fret number example -->
+      <text x="200" y="36" text-anchor="middle" font-size="14" fill="#2563EB" font-weight="700">5</text>
+      <!-- Arrow label fret -->
+      <line x1="200" y1="12" x2="200" y2="5" stroke="#2563EB" stroke-width="1.5"/>
+      <text x="172" y="5" font-size="8" fill="#2563EB">5 = fret 5</text>
+      <!-- Higher fret -->
+      <text x="320" y="50" text-anchor="middle" font-size="14" fill="#D97706" font-weight="700">7</text>
+      <line x1="320" y1="12" x2="320" y2="5" stroke="#D97706" stroke-width="1.5"/>
+      <text x="300" y="5" font-size="8" fill="#D97706">fret 7</text>
+      <!-- string direction arrow -->
+      <text x="460" y="56" font-size="9" fill="currentColor" opacity="0.5">→ time</text>
+      {/if}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="TAB SYMBOL LIBRARY">
+    <svg viewBox="0 0 460 200" width="100%" style="display:block" role="img" aria-label="Tab symbols">
+      {#if true}
+      <!-- Hammer-on -->
+      <text x="30" y="55" font-size="13" fill="currentColor" font-weight="700">5</text>
+      <path d="M38,52 Q48,42 58,52" fill="none" stroke="#16A34A" stroke-width="1.5"/>
+      <text x="50" y="47" font-size="9" fill="#16A34A">h</text>
+      <text x="60" y="55" font-size="13" fill="currentColor" font-weight="700">7</text>
+      <text x="25" y="70" font-size="8" fill="currentColor" opacity="0.7">h = hammer-on</text>
+      <!-- Pull-off -->
+      <text x="145" y="55" font-size="13" fill="currentColor" font-weight="700">7</text>
+      <path d="M153,48 Q163,58 173,48" fill="none" stroke="#DC2626" stroke-width="1.5"/>
+      <text x="165" y="62" font-size="9" fill="#DC2626">p</text>
+      <text x="175" y="55" font-size="13" fill="currentColor" font-weight="700">5</text>
+      <text x="140" y="70" font-size="8" fill="currentColor" opacity="0.7">p = pull-off</text>
+      <!-- Bend -->
+      <text x="260" y="70" font-size="13" fill="currentColor" font-weight="700">7</text>
+      <text x="272" y="70" font-size="10" fill="#D97706">b</text>
+      <text x="280" y="70" font-size="13" fill="currentColor" font-weight="700">9</text>
+      <path d="M263,62 Q263,48 272,44" fill="none" stroke="#D97706" stroke-width="1.5"/>
+      <text x="256" y="85" font-size="8" fill="currentColor" opacity="0.7">b = bend to pitch</text>
+      <!-- Bend release -->
+      <text x="375" y="70" font-size="13" fill="currentColor" font-weight="700">7</text>
+      <text x="387" y="70" font-size="10" fill="#D97706">br</text>
+      <path d="M376,62 Q376,50 385,46 Q394,50 394,62" fill="none" stroke="#D97706" stroke-width="1.5"/>
+      <text x="365" y="85" font-size="8" fill="currentColor" opacity="0.7">r = release bend</text>
+      <!-- Slide up -->
+      <text x="30" y="150" font-size="13" fill="currentColor" font-weight="700">5</text>
+      <line x1="40" y1="145" x2="54" y2="135" stroke="#2563EB" stroke-width="2"/>
+      <text x="57" y="140" font-size="13" fill="currentColor" font-weight="700">7</text>
+      <text x="25" y="165" font-size="8" fill="currentColor" opacity="0.7">/ = slide up</text>
+      <!-- Slide down -->
+      <text x="145" y="140" font-size="13" fill="currentColor" font-weight="700">7</text>
+      <line x1="155" y1="135" x2="169" y2="145" stroke="#2563EB" stroke-width="2"/>
+      <text x="171" y="150" font-size="13" fill="currentColor" font-weight="700">5</text>
+      <text x="140" y="165" font-size="8" fill="currentColor" opacity="0.7">\ = slide down</text>
+      <!-- Vibrato -->
+      <text x="260" y="150" font-size="13" fill="currentColor" font-weight="700">7</text>
+      <path d="M272,143 Q275,137 278,143 Q281,149 284,143 Q287,137 290,143" fill="none" stroke="#7C3AED" stroke-width="1.5"/>
+      <text x="255" y="165" font-size="8" fill="currentColor" opacity="0.7">~ = vibrato</text>
+      <!-- Muted -->
+      <text x="378" y="150" font-size="14" fill="#9CA3AF" font-weight="700">x</text>
+      <text x="368" y="165" font-size="8" fill="currentColor" opacity="0.7">x = muted/dead</text>
+      {/if}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="SMOKE ON THE WATER — OPENING RIFF">
+    <svg viewBox="0 0 460 130" width="100%" style="display:block" role="img" aria-label="Smoke on the Water tab">
+      {#if true}
+      {@const STR_Y2 = [20, 32, 44, 56, 68, 80]}
+      <!-- String lines -->
+      {#each STR_Y2 as y}
+        <line x1="40" y1={y} x2="440" y2={y} stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+      {/each}
+      <!-- String labels -->
+      {#each ['e','B','G','D','A','E'] as lbl, i}
+        <text x="28" y={STR_Y2[i]+4} text-anchor="middle" font-size="8" fill="currentColor" opacity="0.6">{lbl}</text>
+      {/each}
+      <!-- Tab borders -->
+      <line x1="40" y1="12" x2="440" y2="12" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <line x1="40" y1="88" x2="440" y2="88" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <!-- Notes: D string (idx 3) 0, 3, 5 | 0, 3, 6, 5 -->
+      <!-- Group 1: D=0, A=x, E=x -->
+      <text x="65" y="60" text-anchor="middle" font-size="11" fill="#16A34A" font-weight="700">0</text>
+      <!-- Group 2: D=3 -->
+      <text x="105" y="60" text-anchor="middle" font-size="11" fill="#16A34A" font-weight="700">3</text>
+      <!-- Group 3: D=5 -->
+      <text x="145" y="60" text-anchor="middle" font-size="11" fill="#16A34A" font-weight="700">5</text>
+      <!-- Group 4: D=0 -->
+      <text x="200" y="60" text-anchor="middle" font-size="11" fill="#16A34A" font-weight="700">0</text>
+      <!-- Group 5: D=3 -->
+      <text x="240" y="60" text-anchor="middle" font-size="11" fill="#16A34A" font-weight="700">3</text>
+      <!-- Group 6: D=6 -->
+      <text x="285" y="60" text-anchor="middle" font-size="11" fill="#D97706" font-weight="700">6</text>
+      <!-- Group 7: D=5 -->
+      <text x="325" y="60" text-anchor="middle" font-size="11" fill="#D97706" font-weight="700">5</text>
+      <!-- Fret lines separating groups -->
+      {#each [84, 124, 175, 215, 260, 305] as fx}
+        <line x1={fx} y1="12" x2={fx} y2="88" stroke="currentColor" stroke-width="0.8" opacity="0.2"/>
+      {/each}
+      <!-- Label callout: fret number -->
+      <line x1="65" y1="60" x2="65" y2="100" stroke="#16A34A" stroke-width="1"/>
+      <text x="40" y="112" font-size="7" fill="#16A34A">fret number</text>
+      <text x="40" y="120" font-size="7" fill="#16A34A">on D string</text>
+      {/if}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="CHORD VS RIFF IN TAB">
+    <svg viewBox="0 0 340 120" width="100%" style="display:block" role="img" aria-label="Chord vs arpeggio in tab">
+      {#if true}
+      {@const SY = [18, 30, 42, 54, 66, 78]}
+      <!-- LEFT: Chord (stacked) -->
+      <text x="80" y="12" text-anchor="middle" font-size="10" fill="#2563EB" font-weight="700">CHORD (simultaneous)</text>
+      {#each SY as y}
+        <line x1="30" y1={y} x2="140" y2={y} stroke="currentColor" stroke-width="0.7" opacity="0.4"/>
+      {/each}
+      <line x1="30" y1="10" x2="140" y2="10" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <line x1="30" y1="86" x2="140" y2="86" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <!-- Stacked numbers at same x -->
+      {#each [2, 3, 2, 0, 0, 0] as fret, i}
+        <text x="85" y={SY[i]+4} text-anchor="middle" font-size="11" fill="#2563EB" font-weight="700">{fret}</text>
+      {/each}
+      <text x="80" y="100" text-anchor="middle" font-size="8" fill="#2563EB">all at same time = chord</text>
+
+      <!-- Divider -->
+      <line x1="170" y1="5" x2="170" y2="115" stroke="currentColor" stroke-width="1" stroke-dasharray="4,3" opacity="0.3"/>
+
+      <!-- RIGHT: Riff (sequential) -->
+      <text x="255" y="12" text-anchor="middle" font-size="10" fill="#D97706" font-weight="700">RIFF (sequential)</text>
+      {#each SY as y}
+        <line x1="185" y1={y} x2="325" y2={y} stroke="currentColor" stroke-width="0.7" opacity="0.4"/>
+      {/each}
+      <line x1="185" y1="10" x2="325" y2="10" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <line x1="185" y1="86" x2="325" y2="86" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <!-- Sequential at different x positions -->
+      {#each [[3,0],[3,1],[3,2],[3,4]] as [strIdx, xi]}
+        <text x={200 + xi*30} y={SY[strIdx]+4} text-anchor="middle" font-size="11" fill="#D97706" font-weight="700">{[0,3,5,7][xi]}</text>
+      {/each}
+      <text x="255" y="100" text-anchor="middle" font-size="8" fill="#D97706">one at a time = riff/arpeggio</text>
+      {/if}
+    </svg>
+  </Block>
+
+  <Block type="tip">
+    <p>Tab doesn't show rhythm. Listen to the recording to get the timing right. Tab is a "where to put your fingers" map, not a complete musical score.</p>
+  </Block>
+
+  <Block type="avoid">
+    <p>Don't skip learning tab symbols — bends and hammer-ons are half the vocabulary of guitar solos. "h", "b", "/" are everywhere.</p>
+  </Block>
+
+  <Block type="dothis">
+    <p>Find a simple song tab online (Smoke on the Water, Seven Nation Army). Read through it top-to-bottom before you play a single note. Identify every number and symbol.</p>
+  </Block>
+
+  <Block type="check">
+    <CheckItem id="0B-zero" label="Know what 0 means on a tab (open string)" />
+    <CheckItem id="0B-hammer" label="Can read hammer-on (h) notation" />
+    <CheckItem id="0B-bend" label="Can read bend (b) notation — e.g. 7b9" />
+    <CheckItem id="0B-chord-vs-riff" label="Can identify a chord vs a riff in tab" />
+  </Block>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     PHASE 0C: Rhythm, Strumming & Timing
+════════════════════════════════════════════════════ -->
+<section class="section phase" id="phase-0C">
+  <div class="phase-header" style="--accent:#7C3AED">
+    <span class="phase-num">Phase 0C</span>
+    <h2 class="phase-title">Rhythm, Strumming &amp; Timing</h2>
+  </div>
+
+  <Block type="concept">
+    <p>The beat is the foundation. Everything — solos, chords, melody — sits on top of rhythm. A player with mediocre technique but great timing sounds musical. The reverse is just noise.</p>
+  </Block>
+
+  <Block type="diagram" title="TIME SIGNATURES — 4/4 AND 3/4">
+    <svg viewBox="0 0 380 120" width="100%" style="display:block" role="img" aria-label="Time signature diagram">
+      <!-- 4/4 label -->
+      <text x="30" y="50" font-size="36" fill="currentColor" font-weight="900" opacity="0.9">4</text>
+      <line x1="22" y1="56" x2="52" y2="56" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <text x="30" y="80" font-size="36" fill="currentColor" font-weight="900" opacity="0.9">4</text>
+      <!-- 4/4 annotation -->
+      <text x="60" y="44" font-size="8" fill="#2563EB">4 beats per bar</text>
+      <text x="60" y="56" font-size="8" fill="#2563EB">quarter note = 1 beat</text>
+      <!-- 4 beat boxes -->
+      {#each [1,2,3,4] as b}
+        <rect x={55 + (b-1)*36} y="68" width="32" height="28" rx="4" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.5"/>
+        <text x={71 + (b-1)*36} y="87" text-anchor="middle" font-size="14" fill="#2563EB" font-weight="700">{b}</text>
+      {/each}
+      <!-- Divider -->
+      <line x1="215" y1="10" x2="215" y2="110" stroke="currentColor" stroke-width="1" stroke-dasharray="4,3" opacity="0.3"/>
+      <!-- 3/4 label -->
+      <text x="225" y="50" font-size="36" fill="currentColor" font-weight="900" opacity="0.9">3</text>
+      <line x1="217" y1="56" x2="247" y2="56" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <text x="225" y="80" font-size="36" fill="currentColor" font-weight="900" opacity="0.9">4</text>
+      <!-- 3/4 annotation -->
+      <text x="255" y="44" font-size="8" fill="#D97706">3 beats per bar</text>
+      <text x="255" y="56" font-size="8" fill="#D97706">waltz time</text>
+      <!-- 3 beat boxes -->
+      {#each [1,2,3] as b}
+        <rect x={250 + (b-1)*36} y="68" width="32" height="28" rx="4" fill="#FFFBEB" stroke="#D97706" stroke-width="1.5"/>
+        <text x={266 + (b-1)*36} y="87" text-anchor="middle" font-size="14" fill="#D97706" font-weight="700">{b}</text>
+      {/each}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="BEAT SUBDIVISION GRID">
+    <svg viewBox="0 0 460 130" width="100%" style="display:block" role="img" aria-label="Beat subdivision grid">
+      <!-- Quarter notes row -->
+      <text x="5" y="28" font-size="8" fill="#2563EB" font-weight="700">Quarter</text>
+      {#each [1,2,3,4] as b}
+        <rect x={65 + (b-1)*90} y="14" width="86" height="22" rx="3" fill="#EFF6FF" stroke="#2563EB" stroke-width="1.5"/>
+        <text x={108 + (b-1)*90} y="29" text-anchor="middle" font-size="13" fill="#2563EB" font-weight="700">{b}</text>
+      {/each}
+      <!-- Eighth notes row -->
+      <text x="5" y="68" font-size="8" fill="#16A34A" font-weight="700">Eighth</text>
+      {#each Array(8) as _, b}
+        <rect x={65 + b*45} y="46" width="41" height="22" rx="3" fill="#F0FDF4" stroke="#16A34A" stroke-width="1"/>
+        <text x={86 + b*45} y="61" text-anchor="middle" font-size="10" fill="#16A34A" font-weight="700">{b%2===0 ? Math.floor(b/2)+1 : '&'}</text>
+      {/each}
+      <!-- Sixteenth notes row -->
+      <text x="5" y="108" font-size="8" fill="#D97706" font-weight="700">16th</text>
+      {#each Array(16) as _, b}
+        <rect x={65 + b*23} y="86" width="19" height="22" rx="2" fill="#FFFBEB" stroke="#D97706" stroke-width="0.8"/>
+        <text x={75 + b*23} y="101" text-anchor="middle" font-size="7" fill="#D97706" font-weight="700">{b+1}</text>
+      {/each}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="DOWNSTROKE / UPSTROKE SYMBOLS">
+    <svg viewBox="0 0 380 90" width="100%" style="display:block" role="img" aria-label="Strum direction symbols">
+      <!-- Down symbol -->
+      <text x="50" y="55" text-anchor="middle" font-size="40" fill="#DC2626" font-weight="700">↓</text>
+      <text x="50" y="75" text-anchor="middle" font-size="11" fill="#DC2626">Downstroke</text>
+      <!-- Up symbol -->
+      <text x="130" y="55" text-anchor="middle" font-size="40" fill="#2563EB" font-weight="700">↑</text>
+      <text x="130" y="75" text-anchor="middle" font-size="11" fill="#2563EB">Upstroke</text>
+      <!-- Example D-D-D-D pattern -->
+      <text x="250" y="20" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.7">Example: 4/4 all downstrokes</text>
+      {#each [1,2,3,4] as b}
+        <rect x={195 + (b-1)*38} y="26" width="34" height="22" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+        <text x={212 + (b-1)*38} y="41" text-anchor="middle" font-size="18" fill="#DC2626" font-weight="700">↓</text>
+      {/each}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="4 STRUMMING PATTERNS">
+    <svg viewBox="0 0 460 200" width="100%" style="display:block" role="img" aria-label="Strumming patterns">
+      {#if true}
+      {@const patterns = [
+        { label: 'P1: All Down', strokes: ['↓','_','↓','_','↓','_','↓','_'] },
+        { label: 'P2: D DU UDU', strokes: ['↓','_','↓','↑','_','↑','↓','↑'] },
+        { label: 'P3: D DU UD_', strokes: ['↓','_','↓','↑','_','↑','↓','_'] },
+        { label: 'P4: Reggae (U)', strokes: ['_','↑','_','↑','_','↑','_','↑'] },
+      ]}
+      {#each patterns as p, pi}
+        {@const py = 14 + pi * 46}
+        <text x="5" y={py + 12} font-size="8" fill="currentColor" font-weight="700" opacity="0.8">{p.label}</text>
+        {#each p.strokes as s, si}
+          {@const sx2 = 100 + si * 45}
+          <rect x={sx2} y={py} width="41" height="22" rx="3" fill={s==='_'?'none':(s==='↓'?'#FEF2F2':'#EFF6FF')} stroke={s==='_'?'currentColor':(s==='↓'?'#DC2626':'#2563EB')} stroke-width={s==='_'?'0.5':'1.5'} opacity={s==='_'?'0.2':'1'}/>
+          {#if s !== '_'}
+            <text x={sx2+20} y={py+16} text-anchor="middle" font-size="16" fill={s==='↓'?'#DC2626':'#2563EB'} font-weight="700">{s}</text>
+          {/if}
+        {/each}
+        <!-- Beat numbers -->
+        {#each ['1','&','2','&','3','&','4','&'] as beat, bi}
+          <text x={120 + bi*45} y={py+32} text-anchor="middle" font-size="7" fill="currentColor" opacity="0.5">{beat}</text>
+        {/each}
+      {/each}
+      {/if}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="PALM MUTING POSITION">
+    <svg viewBox="0 0 340 120" width="100%" style="display:block" role="img" aria-label="Palm muting diagram">
+      <!-- Guitar body outline -->
+      <ellipse cx="280" cy="60" rx="50" ry="55" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+      <!-- Bridge -->
+      <rect x="240" y="50" width="8" height="20" rx="2" fill="currentColor" opacity="0.5"/>
+      <text x="255" y="46" font-size="8" fill="currentColor" opacity="0.7">bridge</text>
+      <!-- Strings -->
+      {#each [48,54,60,66,72,78] as sy}
+        <line x1="30" y1={sy} x2="240" y2={sy} stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+      {/each}
+      <!-- Hand heel (CORRECT — near bridge) -->
+      <ellipse cx="200" cy="63" rx="30" ry="14" fill="#16A34A" opacity="0.25" stroke="#16A34A" stroke-width="1.5"/>
+      <text x="170" y="88" font-size="8" fill="#16A34A">✓ heel near bridge</text>
+      <!-- Pick motion arrow -->
+      <path d="M210,35 Q220,55 210,78" fill="none" stroke="#16A34A" stroke-width="2" stroke-dasharray="3,2"/>
+      <text x="218" y="55" font-size="8" fill="#16A34A">pick</text>
+      <!-- WRONG position -->
+      <ellipse cx="100" cy="63" rx="30" ry="14" fill="#DC2626" opacity="0.15" stroke="#DC2626" stroke-width="1.5" stroke-dasharray="4,3"/>
+      <text x="72" y="88" font-size="8" fill="#DC2626">✗ too far = no mute</text>
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="BPM LADDER — BUILD UP SPEED">
+    <div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 0">
+      {#each [60,70,80,90,100,110,120] as bpm}
+        <div style="display:flex;align-items:center;gap:6px">
+          <CheckItem id={`0C-bpm-${bpm}`} label={`${bpm} BPM`} />
+        </div>
+      {/each}
+    </div>
+  </Block>
+
+  <Block type="tip">
+    <p>Tap your foot on beats 1-2-3-4 while strumming. If your foot stops, you've lost the pulse. The foot is your internal metronome.</p>
+  </Block>
+
+  <Block type="avoid">
+    <p>Don't speed up when it gets hard. The correct response to difficulty is always to slow down. Speed is a result of accuracy, not effort.</p>
+  </Block>
+
+  <Block type="dothis">
+    <p>Practice each strumming pattern at 70 BPM with a metronome for 5 minutes before moving to the next. Use a free metronome app or metronome-online.com.</p>
+  </Block>
+
+  <Block type="check">
+    <CheckItem id="0C-dddd" label="Can strum D-D-D-D in time with a metronome" />
+    <CheckItem id="0C-dduudu" label="Can strum D-DU-UDU pattern cleanly" />
+    <CheckItem id="0C-palm" label="Can palm mute while strumming" />
+    <CheckItem id="0C-foot" label="Foot taps naturally while playing" />
+  </Block>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     PHASE 0D: Power Chords
+════════════════════════════════════════════════════ -->
+<section class="section phase" id="phase-0D">
+  <div class="phase-header" style="--accent:#7C3AED">
+    <span class="phase-num">Phase 0D</span>
+    <h2 class="phase-title">Power Chords</h2>
+  </div>
+
+  <Block type="concept">
+    <p>Power chord = Root + 5th. That's it. No 3rd means it's neither major nor minor — it works with any key. The same 2-finger shape slides anywhere on strings 5 or 6.</p>
+  </Block>
+
+  <Block type="diagram" title="E5 POWER CHORD ANATOMY">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start">
+      <div>
+        <ChordBox
+          name="E5"
+          frets_data={[null, null, null, null, 2, 0]}
+          startFret={1}
+          roots={[6]}
+          fifths={[5]}
+          labels={[null, null, null, null, '5', 'R']}
+        />
+      </div>
+      <div style="font-size:0.82rem;line-height:1.6;padding-top:8px">
+        <p><strong>Root (R)</strong> = E on string 6, fret 0</p>
+        <p><strong>5th</strong> = B on string 5, fret 2</p>
+        <p style="margin-top:8px;color:#7C3AED">No 3rd = neither major nor minor. Works everywhere.</p>
+      </div>
+    </div>
+  </Block>
+
+  <Block type="diagram" title="STRING 6 vs STRING 5 ROOT — SAME SHAPE">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <ChordBox
+          name="E5 (root str 6)"
+          frets_data={[null, null, null, null, 2, 0]}
+          startFret={1}
+          roots={[6]}
+          fifths={[5]}
+          labels={[null, null, null, null, '5', 'R']}
+        />
+        <p style="font-size:0.78rem;text-align:center;margin-top:4px;opacity:0.7">Index fret 0, ring fret 2</p>
+      </div>
+      <div>
+        <ChordBox
+          name="A5 (root str 5)"
+          frets_data={[null, null, null, 2, 0, null]}
+          startFret={1}
+          roots={[5]}
+          fifths={[4]}
+          labels={[null, null, null, '5', 'R', null]}
+        />
+        <p style="font-size:0.78rem;text-align:center;margin-top:4px;opacity:0.7">Identical finger shape</p>
+      </div>
+    </div>
+  </Block>
+
+  <Block type="diagram" title="FULL NECK POWER CHORD MAP">
+    <svg viewBox="0 0 460 110" width="100%" style="display:block" role="img" aria-label="Power chord neck map">
+      {#if true}
+      {@const STR6_NOTES = ['E','F','F#','G','G#','A','A#','B','C','C#','D','D#','E']}
+      {@const STR5_NOTES = ['A','A#','B','C','C#','D','D#','E','F','F#','G','G#','A']}
+      <!-- Fret markers -->
+      {#each Array(13) as _, fi}
+        {@const fx = 40 + fi * 32}
+        <text x={fx} y="10" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.4">{fi}</text>
+        <line x1={fx} y1="14" x2={fx} y2="100" stroke="currentColor" stroke-width="0.6" opacity="0.15"/>
+      {/each}
+      <!-- String 6 row -->
+      <text x="15" y="40" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.6">E (6)</text>
+      <line x1="40" y1="34" x2="424" y2="34" stroke="currentColor" stroke-width="1.2" opacity="0.4"/>
+      {#each STR6_NOTES as note, fi}
+        {@const fx = 40 + fi * 32}
+        <circle cx={fx} cy="34" r="13" fill={note.includes('#') ? '#374151' : '#DC2626'} opacity="0.85"/>
+        <text x={fx} y="38" text-anchor="middle" font-size={note.length > 2 ? '6' : '8'} fill="white" font-weight="700">{note}</text>
+      {/each}
+      <!-- String 5 row -->
+      <text x="15" y="76" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.6">A (5)</text>
+      <line x1="40" y1="70" x2="424" y2="70" stroke="currentColor" stroke-width="1.2" opacity="0.4"/>
+      {#each STR5_NOTES as note, fi}
+        {@const fx = 40 + fi * 32}
+        <circle cx={fx} cy="70" r="13" fill={note.includes('#') ? '#374151' : '#16A34A'} opacity="0.85"/>
+        <text x={fx} y="74" text-anchor="middle" font-size={note.length > 2 ? '6' : '8'} fill="white" font-weight="700">{note}</text>
+      {/each}
+      <!-- Slide arrow -->
+      <text x="200" y="100" text-anchor="middle" font-size="9" fill="currentColor" opacity="0.5">← slide shape left/right to change root note →</text>
+      {/if}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="POWER CHORD RIFF WITH PALM MUTE">
+    <svg viewBox="0 0 460 120" width="100%" style="display:block" role="img" aria-label="Power chord palm mute tab">
+      {#if true}
+      {@const RY = [20,30,40,50,60,70,80]}
+      {#each RY.slice(1) as y, i}
+        <line x1="50" y1={y} x2="440" y2={y} stroke="currentColor" stroke-width={i>=4?1.2:0.8} opacity="0.4"/>
+      {/each}
+      {#each ['e','B','G','D','A','E'] as l, i}
+        <text x="30" y={RY[i+1]+4} text-anchor="middle" font-size="8" fill="currentColor" opacity="0.5">{l}</text>
+      {/each}
+      <line x1="50" y1="14" x2="440" y2="14" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <line x1="50" y1="88" x2="440" y2="88" stroke="currentColor" stroke-width="2" opacity="0.6"/>
+      <!-- E5: str5=2, str6=0 -->
+      <text x="80" y="64" text-anchor="middle" font-size="11" fill="#DC2626" font-weight="700">2</text>
+      <text x="80" y="84" text-anchor="middle" font-size="11" fill="#DC2626" font-weight="700">0</text>
+      <!-- A5: str4=2, str5=0 -->
+      <text x="160" y="54" text-anchor="middle" font-size="11" fill="#DC2626" font-weight="700">2</text>
+      <text x="160" y="64" text-anchor="middle" font-size="11" fill="#DC2626" font-weight="700">0</text>
+      <!-- D5: str3=2, str4=0 -->
+      <text x="240" y="44" text-anchor="middle" font-size="11" fill="#DC2626" font-weight="700">2</text>
+      <text x="240" y="54" text-anchor="middle" font-size="11" fill="#DC2626" font-weight="700">0</text>
+      <!-- A5 again -->
+      <text x="320" y="54" text-anchor="middle" font-size="11" fill="#DC2626" font-weight="700">2</text>
+      <text x="320" y="64" text-anchor="middle" font-size="11" fill="#DC2626" font-weight="700">0</text>
+      <!-- PM dashed line -->
+      <line x1="60" y1="96" x2="380" y2="96" stroke="#9CA3AF" stroke-width="1.5" stroke-dasharray="4,2"/>
+      <text x="60" y="108" font-size="8" fill="#9CA3AF">PM ———————————————</text>
+      <!-- Chord labels -->
+      <text x="80" y="18" text-anchor="middle" font-size="9" fill="#DC2626" font-weight="700">E5</text>
+      <text x="160" y="18" text-anchor="middle" font-size="9" fill="#DC2626" font-weight="700">A5</text>
+      <text x="240" y="18" text-anchor="middle" font-size="9" fill="#DC2626" font-weight="700">D5</text>
+      <text x="320" y="18" text-anchor="middle" font-size="9" fill="#DC2626" font-weight="700">A5</text>
+      <!-- Pick arrows -->
+      {#each [80,160,240,320] as px}
+        <text x={px} y="10" text-anchor="middle" font-size="12" fill="#D97706">↓</text>
+      {/each}
+      {/if}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="3-NOTE POWER CHORD (add octave)">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+      <div>
+        <ChordBox
+          name="E5 (3 note)"
+          frets_data={[null, null, null, 2, 2, 0]}
+          startFret={1}
+          roots={[6, 4]}
+          fifths={[5]}
+          labels={[null, null, null, 'R', '5', 'R']}
+        />
+      </div>
+      <div style="font-size:0.82rem;line-height:1.6;padding-top:8px">
+        <p>Same 2-finger shape + pinky on string 4, same fret as ring finger.</p>
+        <p style="margin-top:6px">Root + 5th + Root (octave up) = fuller, heavier sound.</p>
+        <p style="margin-top:6px;color:#7C3AED">Pinky stretches to string 4, fret 2.</p>
+      </div>
+    </div>
+  </Block>
+
+  <Block type="tip">
+    <p>The root note names the chord. E5 = power chord with E as root. Slide the same shape to fret 3 on string 6 = G5. Fret 5 = A5. The shape doesn't change — only position.</p>
+  </Block>
+
+  <Block type="avoid">
+    <p>Don't accidentally hit strings above the root — mute them with the underside of your index finger. A rogue open string above the root chord will clash badly.</p>
+  </Block>
+
+  <Block type="dothis">
+    <p>Play E5 → A5 → D5 → A5 → G5 up and down the neck. Then add palm muting. Then plug into distortion if you have it — power chords were made for overdrive.</p>
+  </Block>
+
+  <Block type="check">
+    <CheckItem id="0D-e5a5" label="Know E5 and A5 shapes from memory" />
+    <CheckItem id="0D-slide" label="Can slide power chord to any root note" />
+    <CheckItem id="0D-palmute" label="Can palm mute while playing power chords" />
+    <CheckItem id="0D-g5c5f5" label="Can find G5, C5, F5 without looking it up" />
+  </Block>
 </section>
 
 <!-- ═══════════════════════════════════════════════════
