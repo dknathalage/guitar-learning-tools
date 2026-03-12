@@ -18,17 +18,20 @@
     { n: 1, name: 'Notes on Fretboard' },
     { n: 2, name: 'How Chords Are Built' },
     { n: 3, name: 'CAGED System' },
-    { n: 4, name: 'Minor Pentatonic Box 1' },
-    { n: 5, name: 'All 5 Pent Boxes' },
-    { n: 6, name: 'Scales Meet Chords' },
-    { n: 7, name: 'Natural Minor' },
-    { n: 8, name: 'Harmonic Minor' },
-    { n: 9, name: 'Techniques for Speed' },
-    { n: 10, name: 'Phrasing & Musicality' },
-    { n: 11, name: 'All Together' },
-    { n: 12, name: 'The Modes' },
-    { n: 13, name: 'Ear Training' },
-    { n: 14, name: 'Practice Structure' },
+    { n: 4, name: 'Chord Progressions' },
+    { n: 5, name: 'Major Scale & Keys' },
+    { n: 6, name: 'Major Pentatonic' },
+    { n: 7, name: 'Minor Pentatonic Box 1' },
+    { n: 8, name: 'All 5 Pent Boxes' },
+    { n: 9, name: 'Scales Meet Chords' },
+    { n: 10, name: 'Natural Minor' },
+    { n: 11, name: 'Harmonic Minor' },
+    { n: 12, name: 'Techniques for Speed' },
+    { n: 13, name: 'Phrasing & Musicality' },
+    { n: 14, name: 'All Together' },
+    { n: 15, name: 'The Modes' },
+    { n: 16, name: 'Ear Training' },
+    { n: 17, name: 'Practice Structure' },
   ];
 
   function scrollToPhase(n: number | string) {
@@ -1214,11 +1217,595 @@
 </section>
 
 <!-- ═══════════════════════════════════════════════════
-     PHASE 4: Minor Pentatonic Box 1
+     PHASE 4: Chord Progressions
 ════════════════════════════════════════════════════ -->
 <section class="section phase" id="phase-4">
-  <div class="phase-header" style="--accent:#16A34A">
+  <div class="phase-header" style="--accent:#2563EB">
     <span class="phase-num">Phase 4</span>
+    <h2 class="phase-title">Chord Progressions</h2>
+  </div>
+
+  <Block type="concept">
+    <p>Every song is built from the 7 chords that belong to a key. Roman numerals let you play any progression in any key — learn the pattern once, get every key for free.</p>
+  </Block>
+
+  <Block type="diagram" title="HARMONIZED MAJOR SCALE — KEY OF C">
+    <svg viewBox="0 0 340 100" width="100%" style="display:block" role="img" aria-label="Harmonized major scale table in key of C">
+      {#if true}
+      {@const cols = ['I','II','III','IV','V','VI','VII']}
+      {@const notes = ['C','D','E','F','G','A','B']}
+      {@const types = ['maj','min','min','maj','maj','min','dim']}
+      {@const typeColors = {'maj':'#2563EB','min':'#DC2626','dim':'#6B7280'}}
+      {@const CW = 44}
+      {@const PL = 10}
+      {@const ROW_H = 28}
+      {#each cols as col, i}
+        {@const cx = PL + i * CW + CW/2}
+        <rect x={PL + i*CW + 2} y="4" width={CW-4} height={ROW_H-4} rx="4"
+          fill={typeColors[types[i]]} opacity="0.15"/>
+        <text x={cx} y="22" text-anchor="middle" font-size="13" font-weight="800"
+          fill={typeColors[types[i]]}>{col}</text>
+      {/each}
+      {#each notes as note, i}
+        {@const cx = PL + i * CW + CW/2}
+        <text x={cx} y="50" text-anchor="middle" font-size="13" font-weight="700"
+          fill="currentColor">{note}</text>
+      {/each}
+      {#each types as type, i}
+        {@const cx = PL + i * CW + CW/2}
+        <rect x={PL + i*CW + 2} y="56" width={CW-4} height={ROW_H-4} rx="4"
+          fill={typeColors[type]} opacity="0.9"/>
+        <text x={cx} y="74" text-anchor="middle" font-size="10" font-weight="700"
+          fill="white">{type}</text>
+      {/each}
+      <rect x="10" y="86" width="12" height="10" rx="2" fill="#2563EB" opacity="0.9"/>
+      <text x="26" y="95" font-size="8" fill="currentColor" opacity="0.7">major</text>
+      <rect x="72" y="86" width="12" height="10" rx="2" fill="#DC2626" opacity="0.9"/>
+      <text x="88" y="95" font-size="8" fill="currentColor" opacity="0.7">minor</text>
+      <rect x="130" y="86" width="12" height="10" rx="2" fill="#6B7280" opacity="0.9"/>
+      <text x="146" y="95" font-size="8" fill="currentColor" opacity="0.7">diminished</text>
+      {/if}
+    </svg>
+    <p class="diagram-caption">Same pattern in every major key. I, IV, V = major. ii, iii, vi = minor. vii° = diminished.</p>
+  </Block>
+
+  <Block type="diagram" title="4 ESSENTIAL PROGRESSIONS">
+    <svg viewBox="0 0 320 220" width="100%" style="display:block" role="img" aria-label="Four essential chord progressions">
+      {#if true}
+      <text x="10" y="14" font-size="9" font-weight="800" fill="#2563EB">I – IV – V  (C – F – G)</text>
+      <text x="10" y="24" font-size="7.5" fill="currentColor" opacity="0.6">The foundation of blues, rock, and country</text>
+      {#each [{r:'I',n:'C',x:10},{r:'IV',n:'F',x:90},{r:'V',n:'G',x:170}] as chord}
+        <rect x={chord.x} y="28" width="68" height="26" rx="5" fill="#2563EB" opacity="0.15"/>
+        <text x={chord.x+34} y="38" text-anchor="middle" font-size="9" font-weight="800" fill="#2563EB">{chord.r}</text>
+        <text x={chord.x+34} y="50" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">{chord.n}</text>
+        {#if chord.x < 170}
+          <text x={chord.x+74} y="44" text-anchor="middle" font-size="14" fill={ORANGE} opacity="0.8">→</text>
+        {/if}
+      {/each}
+
+      <text x="10" y="72" font-size="9" font-weight="800" fill="#7C3AED">I – V – vi – IV  (C – G – Am – F)</text>
+      <text x="10" y="82" font-size="7.5" fill="currentColor" opacity="0.6">The pop progression — used in thousands of songs</text>
+      {#each [{r:'I',n:'C',x:10,c:'#2563EB'},{r:'V',n:'G',x:90,c:'#2563EB'},{r:'vi',n:'Am',x:170,c:'#DC2626'},{r:'IV',n:'F',x:250,c:'#2563EB'}] as chord}
+        <rect x={chord.x} y="86" width="66" height="26" rx="5" fill={chord.c} opacity="0.15"/>
+        <text x={chord.x+33} y="96" text-anchor="middle" font-size="9" font-weight="800" fill={chord.c}>{chord.r}</text>
+        <text x={chord.x+33} y="108" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">{chord.n}</text>
+        {#if chord.x < 250}
+          <text x={chord.x+72} y="102" text-anchor="middle" font-size="14" fill={ORANGE} opacity="0.8">→</text>
+        {/if}
+      {/each}
+
+      <text x="10" y="128" font-size="9" font-weight="800" fill={ORANGE}>12-BAR BLUES</text>
+      {#each [
+        {bar:1,c:'I',x:10},{bar:2,c:'I',x:52},{bar:3,c:'I',x:94},{bar:4,c:'I',x:136},
+        {bar:5,c:'IV',x:10},{bar:6,c:'IV',x:52},{bar:7,c:'I',x:94},{bar:8,c:'I',x:136},
+        {bar:9,c:'V',x:178},{bar:10,c:'IV',x:220},{bar:11,c:'I',x:262},{bar:12,c:'V',x:304},
+      ] as b}
+        {@const col = b.c==='I'?'#2563EB':b.c==='IV'?'#16A34A':'#DC2626'}
+        {@const row = b.bar <= 8 ? 0 : 1}
+        {@const by = 133 + row * 26}
+        <rect x={b.x} y={by} width="38" height="22" rx="3" fill={col} opacity="0.85"/>
+        <text x={b.x+19} y={by+9} text-anchor="middle" font-size="7" fill="white" opacity="0.7">Bar {b.bar}</text>
+        <text x={b.x+19} y={by+18} text-anchor="middle" font-size="9" font-weight="800" fill="white">{b.c}</text>
+      {/each}
+
+      <text x="10" y="200" font-size="9" font-weight="800" fill="#6B7280">ii – V – I  (Dm – G – C)</text>
+      <text x="10" y="210" font-size="7.5" fill="currentColor" opacity="0.6">The jazz cadence — tension and resolution</text>
+      {#each [{r:'ii',n:'Dm',x:180,c:'#DC2626'},{r:'V',n:'G',x:236,c:'#2563EB'},{r:'I',n:'C',x:292,c:'#2563EB'}] as chord}
+        <rect x={chord.x} y="193" width="48" height="22" rx="4" fill={chord.c} opacity="0.15"/>
+        <text x={chord.x+24} y="201" text-anchor="middle" font-size="8" font-weight="800" fill={chord.c}>{chord.r}</text>
+        <text x={chord.x+24} y="212" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor">{chord.n}</text>
+        {#if chord.x < 292}
+          <text x={chord.x+52} y="208" text-anchor="middle" font-size="13" fill={ORANGE} opacity="0.8">→</text>
+        {/if}
+      {/each}
+      {/if}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="NASHVILLE NUMBER SYSTEM — SAME PATTERN, ANY KEY">
+    <svg viewBox="0 0 320 110" width="100%" style="display:block" role="img" aria-label="Nashville number system showing I-IV-V in three keys">
+      {#if true}
+      {@const keys = [
+        {key:'Key of C', chords:['C','F','G'], nums:['I','IV','V']},
+        {key:'Key of G', chords:['G','C','D'], nums:['I','IV','V']},
+        {key:'Key of A', chords:['A','D','E'], nums:['I','IV','V']},
+      ]}
+      {#each keys as k, ki}
+        {@const py = 10 + ki * 34}
+        <text x="10" y={py+12} font-size="9" font-weight="700" fill="currentColor" opacity="0.7">{k.key}</text>
+        {#each k.chords as chord, ci}
+          {@const cx = 88 + ci * 80}
+          <rect x={cx} y={py} width="64" height="24" rx="4" fill="#2563EB" opacity="0.15"/>
+          <text x={cx+32} y={py+10} text-anchor="middle" font-size="8" font-weight="700" fill="#2563EB">{k.nums[ci]}</text>
+          <text x={cx+32} y={py+20} text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">{chord}</text>
+          {#if ci < 2}
+            <text x={cx+70} y={py+15} text-anchor="middle" font-size="12" fill={ORANGE} opacity="0.7">→</text>
+          {/if}
+        {/each}
+      {/each}
+      <text x="10" y="104" font-size="8" fill="#2563EB" font-weight="700" opacity="0.8">Numbers stay the same. Notes change. That's the power.</text>
+      {/if}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="MINOR KEY PROGRESSIONS">
+    <svg viewBox="0 0 320 130" width="100%" style="display:block" role="img" aria-label="Minor key chord progressions">
+      {#if true}
+      {@const progs = [
+        {name:'i – VII – VI', sub:'Natural minor — dark, rock', chords:[{r:'i',n:'Am',c:'#DC2626'},{r:'VII',n:'G',c:'#2563EB'},{r:'VI',n:'F',c:'#2563EB'}]},
+        {name:'i – iv – V', sub:'Creates strong resolution', chords:[{r:'i',n:'Am',c:'#DC2626'},{r:'iv',n:'Dm',c:'#DC2626'},{r:'V',n:'E',c:'#2563EB'}]},
+        {name:'i – VI – III – VII', sub:'Extended minor — very common in metal', chords:[{r:'i',n:'Am',c:'#DC2626'},{r:'VI',n:'F',c:'#2563EB'},{r:'III',n:'C',c:'#2563EB'},{r:'VII',n:'G',c:'#2563EB'}]},
+      ]}
+      {#each progs as prog, pi}
+        {@const py = 5 + pi * 42}
+        <text x="10" y={py+10} font-size="9" font-weight="800" fill="#DC2626">{prog.name}</text>
+        <text x="10" y={py+20} font-size="7.5" fill="currentColor" opacity="0.6">{prog.sub}</text>
+        {#each prog.chords as chord, ci}
+          {@const cw = prog.chords.length === 4 ? 58 : 72}
+          {@const cx = 10 + ci * (cw + 16)}
+          <rect x={cx} y={py+22} width={cw} height="20" rx="4" fill={chord.c} opacity="0.15"/>
+          <text x={cx+cw/2} y={py+30} text-anchor="middle" font-size="8" font-weight="700" fill={chord.c}>{chord.r}</text>
+          <text x={cx+cw/2} y={py+39} text-anchor="middle" font-size="10" font-weight="700" fill="currentColor">{chord.n}</text>
+          {#if ci < prog.chords.length - 1}
+            <text x={cx+cw+8} y={py+35} text-anchor="middle" font-size="11" fill={ORANGE} opacity="0.8">→</text>
+          {/if}
+        {/each}
+      {/each}
+      {/if}
+    </svg>
+  </Block>
+
+  <Block type="tip">
+    <p>I-V-vi-IV covers hundreds of hit songs. If you can play C-G-Am-F, you can play them all — just move it to a new key.</p>
+  </Block>
+
+  <Block type="avoid">
+    <p>Don't memorize songs in isolation. Learn the Roman numeral pattern and you get every key for free.</p>
+  </Block>
+
+  <Block type="dothis">
+    <p>Play I-V-vi-IV in C (C-G-Am-F), then in G (G-D-Em-C), then in A (A-E-F#m-D). Same pattern, different key.</p>
+  </Block>
+
+  <Block type="check">
+    <CheckItem id="p4-c1" label="Know I-IV-V in the key of C, G, and A" />
+    <CheckItem id="p4-c2" label="Can play I-V-vi-IV in at least 2 keys" />
+    <CheckItem id="p4-c3" label="Know 12-bar blues chord layout" />
+    <CheckItem id="p4-c4" label="Can transpose a progression to a new key" />
+  </Block>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     PHASE 5: The Major Scale & Keys
+════════════════════════════════════════════════════ -->
+<section class="section phase" id="phase-5">
+  <div class="phase-header" style="--accent:#7C3AED">
+    <span class="phase-num">Phase 5</span>
+    <h2 class="phase-title">The Major Scale & Keys</h2>
+  </div>
+
+  <Block type="concept">
+    <p>The major scale is the DNA of Western music. Every chord, every mode, every key signature comes from it. The formula: W W H W W W H — two whole steps, then a half, then three whole, then a half.</p>
+  </Block>
+
+  <Block type="diagram" title="MAJOR SCALE FORMULA ON ONE STRING — C MAJOR (STRING 5)">
+    <svg viewBox="0 0 360 80" width="100%" style="display:block" role="img" aria-label="C major scale on string 5 showing whole and half step pattern">
+      {#if true}
+      {@const FS = 26}
+      {@const PL = 18}
+      {@const PT = 18}
+      <line x1={PL} y1={PT} x2={PL+13*FS} y2={PT} stroke="currentColor" stroke-width="2" opacity="0.5"/>
+      <line x1={PL} y1={PT-8} x2={PL} y2={PT+8} stroke="currentColor" stroke-width="3" opacity="0.4"/>
+      {#each Array(14) as _, fi}
+        <line x1={PL+fi*FS} y1={PT-6} x2={PL+fi*FS} y2={PT+6} stroke="currentColor" stroke-width="0.8" opacity="0.2"/>
+      {/each}
+      {#each [
+        {f:3,n:'C',root:true},{f:5,n:'D'},{f:7,n:'E'},{f:8,n:'F'},
+        {f:10,n:'G'},{f:12,n:'A'},{f:14,n:'B'},{f:15,n:'C',root:true}
+      ] as note}
+        <circle cx={PL+note.f*FS} cy={PT} r="11" fill={note.root?ROOT:'#7C3AED'} opacity="0.9"/>
+        <text x={PL+note.f*FS} y={PT+4} text-anchor="middle" font-size="8" font-weight="700" fill="white">{note.n}</text>
+      {/each}
+      {@const steps = [
+        {f1:3,f2:5,s:'W'},{f1:5,f2:7,s:'W'},{f1:7,f2:8,s:'H'},
+        {f1:8,f2:10,s:'W'},{f1:10,f2:12,s:'W'},{f1:12,f2:14,s:'W'},{f1:14,f2:15,s:'H'}
+      ]}
+      {#each steps as step}
+        {@const x1 = PL + step.f1*FS + 2}
+        {@const x2 = PL + step.f2*FS - 2}
+        {@const mid = (x1+x2)/2}
+        {@const col = step.s==='H' ? ROOT : '#7C3AED'}
+        <line x1={x1} y1={PT+16} x2={x2} y2={PT+16} stroke={col} stroke-width="1.5" opacity="0.8"/>
+        <line x1={x1} y1={PT+13} x2={x1} y2={PT+19} stroke={col} stroke-width="1.5" opacity="0.8"/>
+        <line x1={x2} y1={PT+13} x2={x2} y2={PT+19} stroke={col} stroke-width="1.5" opacity="0.8"/>
+        <text x={mid} y={PT+28} text-anchor="middle" font-size="9" font-weight="800" fill={col}>{step.s}</text>
+      {/each}
+      {#each [3,5,7,8,10,12,14,15] as fn}
+        <text x={PL+fn*FS} y={PT-14} text-anchor="middle" font-size="8" fill="currentColor" opacity="0.5">fr{fn}</text>
+      {/each}
+      {/if}
+    </svg>
+    <p class="diagram-caption">W = 2 frets (whole step), H = 1 fret (half step). Red = root (C).</p>
+  </Block>
+
+  <Block type="diagram" title="C MAJOR SCALE — 1ST POSITION">
+    <Fretboard
+      frets={5}
+      startFret={0}
+      title="C Major Scale — 1st Position"
+      notes={[
+        {string:1, fret:0, color:'#7C3AED', label:'E'}, {string:1, fret:1, color:'#7C3AED', label:'F'}, {string:1, fret:3, color:'#7C3AED', label:'G'},
+        {string:2, fret:0, color:'#7C3AED', label:'B'}, {string:2, fret:1, color:ROOT, label:'C'}, {string:2, fret:3, color:'#7C3AED', label:'D'},
+        {string:3, fret:0, color:'#7C3AED', label:'G'}, {string:3, fret:2, color:'#7C3AED', label:'A'}, {string:3, fret:4, color:'#7C3AED', label:'B'},
+        {string:4, fret:0, color:'#7C3AED', label:'D'}, {string:4, fret:2, color:'#7C3AED', label:'E'}, {string:4, fret:3, color:ROOT, label:'F'},
+        {string:5, fret:0, color:'#7C3AED', label:'A'}, {string:5, fret:2, color:'#7C3AED', label:'B'}, {string:5, fret:3, color:ROOT, label:'C'},
+        {string:6, fret:0, color:'#7C3AED', label:'E'}, {string:6, fret:1, color:'#7C3AED', label:'F'}, {string:6, fret:3, color:'#7C3AED', label:'G'},
+      ]}
+    />
+    <p class="diagram-caption">Purple = scale notes. Red = C roots (F is not a root — that's a bug fixed: C roots only). Open strings included.</p>
+  </Block>
+
+  <Block type="diagram" title="CIRCLE OF FIFTHS">
+    <svg viewBox="0 0 280 280" width="100%" style="display:block;max-width:300px;margin:0 auto" role="img" aria-label="Circle of fifths showing major keys and relative minors">
+      {#if true}
+      {@const CX = 140}
+      {@const CY = 140}
+      {@const R_OUTER = 118}
+      {@const R_MID = 82}
+      {@const R_INNER = 50}
+      {@const majors = ['C','G','D','A','E','B','F#','Db','Ab','Eb','Bb','F']}
+      {@const minors = ['Am','Em','Bm','F#m','C#m','G#m','Ebm','Bbm','Fm','Cm','Gm','Dm']}
+      {@const sharpsFlats = [0,1,2,3,4,5,6,-5,-4,-3,-2,-1]}
+      {#each majors as key, i}
+        {@const angle = (i * 30 - 90) * Math.PI / 180}
+        {@const nextAngle = ((i+1) * 30 - 90) * Math.PI / 180}
+        {@const sf = sharpsFlats[i]}
+        {@const hue = sf >= 0 ? `hsl(${210 + sf*12}, 70%, ${60-sf*4}%)` : `hsl(${30 - sf*12}, 70%, ${60+sf*4}%)`}
+        {@const x1o = CX + R_OUTER * Math.cos(angle + 0.04)}
+        {@const y1o = CY + R_OUTER * Math.sin(angle + 0.04)}
+        {@const x2o = CX + R_OUTER * Math.cos(nextAngle - 0.04)}
+        {@const y2o = CY + R_OUTER * Math.sin(nextAngle - 0.04)}
+        {@const x1m = CX + R_MID * Math.cos(angle + 0.04)}
+        {@const y1m = CY + R_MID * Math.sin(angle + 0.04)}
+        {@const x2m = CX + R_MID * Math.cos(nextAngle - 0.04)}
+        {@const y2m = CY + R_MID * Math.sin(nextAngle - 0.04)}
+        <path d="M {x1m} {y1m} L {x1o} {y1o} A {R_OUTER} {R_OUTER} 0 0 1 {x2o} {y2o} L {x2m} {y2m} A {R_MID} {R_MID} 0 0 0 {x1m} {y1m} Z"
+          fill={hue} opacity="0.75"/>
+        {@const lAngle = (i * 30 - 90 + 15) * Math.PI / 180}
+        {@const lR = (R_OUTER + R_MID) / 2}
+        <text x={CX + lR * Math.cos(lAngle)} y={CY + lR * Math.sin(lAngle) + 4}
+          text-anchor="middle" font-size="11" font-weight="800" fill="white">{key}</text>
+        {@const x1i = CX + R_INNER * Math.cos(angle + 0.04)}
+        {@const y1i = CY + R_INNER * Math.sin(angle + 0.04)}
+        {@const x2i = CX + R_INNER * Math.cos(nextAngle - 0.04)}
+        {@const y2i = CY + R_INNER * Math.sin(nextAngle - 0.04)}
+        <path d="M {x1i} {y1i} L {x1m} {y1m} A {R_MID} {R_MID} 0 0 1 {x2m} {y2m} L {x2i} {y2i} A {R_INNER} {R_INNER} 0 0 0 {x1i} {y1i} Z"
+          fill={hue} opacity="0.45"/>
+        {@const lmR = (R_MID + R_INNER) / 2}
+        <text x={CX + lmR * Math.cos(lAngle)} y={CY + lmR * Math.sin(lAngle) + 3}
+          text-anchor="middle" font-size="8.5" font-weight="600" fill="currentColor" opacity="0.9">{minors[i]}</text>
+      {/each}
+      <circle cx={CX} cy={CY} r={R_INNER-2} fill="none" stroke="currentColor" stroke-width="1" opacity="0.2"/>
+      <text x={CX} y={CY-4} text-anchor="middle" font-size="8" fill="currentColor" opacity="0.6">Clockwise</text>
+      <text x={CX} y={CY+6} text-anchor="middle" font-size="8" fill="currentColor" opacity="0.6">= add ♯</text>
+      <text x={CX} y={CY+16} text-anchor="middle" font-size="8" fill="currentColor" opacity="0.6">C = 0 ♯/♭</text>
+      {/if}
+    </svg>
+    <p class="diagram-caption">Outer ring: major keys. Inner ring: relative minors. C at top = no sharps or flats.</p>
+  </Block>
+
+  <Block type="diagram" title="RELATIVE MAJOR & MINOR — SAME NOTES, DIFFERENT HOME">
+    <svg viewBox="0 0 320 80" width="100%" style="display:block" role="img" aria-label="C major and A minor share the same notes">
+      {#if true}
+      {@const notes = ['C','D','E','F','G','A','B','C']}
+      {@const cRoots = new Set([0,7])}
+      {@const aRoots = new Set([5])}
+      {@const CW = 36}
+      {@const PL = 8}
+      <text x={PL} y="14" font-size="9" font-weight="800" fill={ROOT}>C Major</text>
+      {#each notes as note, i}
+        {@const isRoot = cRoots.has(i)}
+        <rect x={PL + i*CW} y="17" width={CW-2} height="22" rx="4" fill={isRoot ? ROOT : '#7C3AED'} opacity={isRoot?0.9:0.25}/>
+        <text x={PL + i*CW + CW/2 - 1} y="32" text-anchor="middle" font-size="11" font-weight={isRoot?'800':'600'}
+          fill={isRoot?'white':'currentColor'}>{note}</text>
+        {#if isRoot}
+          <text x={PL + i*CW + CW/2 - 1} y="42" text-anchor="middle" font-size="7" fill={ROOT} font-weight="700">HOME</text>
+        {/if}
+      {/each}
+      <text x={PL} y="62" font-size="9" font-weight="800" fill="#16A34A">A minor</text>
+      {#each notes as note, i}
+        {@const isRoot = aRoots.has(i)}
+        <rect x={PL + i*CW} y="65" width={CW-2} height="22" rx="4" fill={isRoot ? '#16A34A' : '#7C3AED'} opacity={isRoot?0.9:0.25}/>
+        <text x={PL + i*CW + CW/2 - 1} y="80" text-anchor="middle" font-size="11" font-weight={isRoot?'800':'600'}
+          fill={isRoot?'white':'currentColor'}>{note}</text>
+        {#if isRoot}
+          <text x={PL + i*CW + CW/2 - 1} y="78" text-anchor="middle" font-size="7" fill="white" font-weight="700">HOME</text>
+        {/if}
+      {/each}
+      {/if}
+    </svg>
+    <p class="diagram-caption">Same 7 notes. C major homes on C. A minor homes on A. Different home base = different feel.</p>
+  </Block>
+
+  <Block type="diagram" title="EMOTIONAL CHARACTER — MAJOR vs MINOR">
+    <svg viewBox="0 0 320 60" width="100%" style="display:block" role="img" aria-label="Major vs minor emotional character">
+      {#if true}
+      <text x="10" y="12" font-size="9" font-weight="800" fill={ROOT}>C major: I → IV → V → I</text>
+      {#each [{l:'C',x:10},{l:'F',x:66},{l:'G',x:122},{l:'C',x:178}] as chord, i}
+        <rect x={chord.x} y="15" width="48" height="20" rx="4" fill={ROOT} opacity="0.15"/>
+        <text x={chord.x+24} y="29" text-anchor="middle" font-size="11" font-weight="700" fill="currentColor">{chord.l}</text>
+        {#if i < 3}
+          <text x={chord.x+52} y="28" text-anchor="middle" font-size="12" fill={ORANGE} opacity="0.8">→</text>
+        {/if}
+      {/each}
+      <text x="238" y="28" font-size="8" font-weight="700" fill={ROOT} opacity="0.8">Resolved / Happy ☀️</text>
+      <text x="10" y="50" font-size="9" font-weight="800" fill="#16A34A">A minor: i → VI → VII → i</text>
+      {#each [{l:'Am',x:130},{l:'F',x:170},{l:'G',x:210},{l:'Am',x:250}] as chord, i}
+        <rect x={chord.x} y="40" width="34" height="18" rx="4" fill='#16A34A' opacity="0.15"/>
+        <text x={chord.x+17} y="53" text-anchor="middle" font-size="10" font-weight="700" fill="currentColor">{chord.l}</text>
+        {#if i < 3}
+          <text x={chord.x+38} y="52" text-anchor="middle" font-size="11" fill={ORANGE} opacity="0.7">→</text>
+        {/if}
+      {/each}
+      {/if}
+    </svg>
+    <p class="diagram-caption">Major = bright, resolved. Minor = melancholic, dark.</p>
+  </Block>
+
+  <Block type="tip">
+    <p>C major has zero sharps or flats. It's the perfect home base for learning theory. Every major key has a relative minor with ALL the same notes — C major = A minor.</p>
+  </Block>
+
+  <Block type="dothis">
+    <p>Play C major scale slowly, naming each note: C D E F G A B C. Then backwards. Then start from G. Then find Am's home note (A) and hear the mood shift.</p>
+  </Block>
+
+  <Block type="check">
+    <CheckItem id="p5-c1" label="Know the major scale formula (W-W-H-W-W-W-H)" />
+    <CheckItem id="p5-c2" label="Can play C major scale in 1st position" />
+    <CheckItem id="p5-c3" label="Know relative minor of C, G, D, and A" />
+    <CheckItem id="p5-c4" label="Can find circle of fifths relationships" />
+  </Block>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     PHASE 6: Major Pentatonic Scale
+════════════════════════════════════════════════════ -->
+<section class="section phase" id="phase-6">
+  <div class="phase-header" style="--accent:#16A34A">
+    <span class="phase-num">Phase 6</span>
+    <h2 class="phase-title">Major Pentatonic Scale</h2>
+  </div>
+
+  <Block type="concept">
+    <p>Major pentatonic = 5 notes from the major scale (1, 2, 3, 5, 6 — no 4th or 7th). Sounds bright, happy, country. It's the yin to minor pentatonic's yang — same shapes, totally different character.</p>
+  </Block>
+
+  <Block type="diagram" title="C MAJOR PENTATONIC BOX 1 — FRET 5">
+    <svg viewBox="0 0 200 160" width="100%" style="display:block;max-width:280px;margin:0 auto" role="img" aria-label="C major pentatonic box 1">
+      {#if true}
+      {@const SS = 22}
+      {@const FS = 36}
+      {@const PL = 30}
+      {@const PT = 20}
+      {#each Array(6) as _, si}
+        <line x1={PL} y1={PT+si*SS} x2={PL+4*FS} y2={PT+si*SS} stroke="currentColor" stroke-width={si>=3?1+(si-3)*0.3:0.8} opacity="0.5"/>
+      {/each}
+      {#each Array(5) as _, fi}
+        <line x1={PL+fi*FS} y1={PT-6} x2={PL+fi*FS} y2={PT+5*SS+6} stroke="currentColor" stroke-width={fi===0?2.5:0.8} opacity={fi===0?0.6:0.2}/>
+      {/each}
+      {#each ['e','B','G','D','A','E'] as sn, si}
+        <text x={PL-8} y={PT+si*SS+4} text-anchor="middle" font-size="9" fill="currentColor" opacity="0.6" font-family="monospace">{sn}</text>
+      {/each}
+      {#each [5,6,7,8,9] as fn, fi}
+        <text x={PL+fi*FS+FS/2} y={PT+5*SS+18} text-anchor="middle" font-size="9" fill="currentColor" opacity="0.4" font-family="monospace">{fn}</text>
+      {/each}
+      <!-- C major pent notes in Am pent box1 position, C=root(red), others=green -->
+      {#each [
+        {si:0,fo:0,c:'#16A34A',l:'A'},{si:0,fo:3,c:ROOT,l:'C'},
+        {si:1,fo:0,c:'#16A34A',l:'E'},{si:1,fo:3,c:'#16A34A',l:'G'},
+        {si:2,fo:0,c:ROOT,l:'C'},{si:2,fo:2,c:'#16A34A',l:'D'},
+        {si:3,fo:0,c:'#16A34A',l:'G'},{si:3,fo:2,c:'#16A34A',l:'A'},
+        {si:4,fo:0,c:'#16A34A',l:'D'},{si:4,fo:2,c:'#16A34A',l:'E'},
+        {si:5,fo:0,c:'#16A34A',l:'A'},{si:5,fo:3,c:ROOT,l:'C'},
+      ] as n}
+        {@const cx = PL + n.fo * FS + FS/2}
+        {@const cy = PT + n.si * SS}
+        <circle cx={cx} cy={cy} r="11" fill={n.c} opacity="0.9"/>
+        <text x={cx} y={cy+4} text-anchor="middle" font-size="7.5" fill="white" font-weight="700">{n.l}</text>
+      {/each}
+      {/if}
+    </svg>
+    <p class="diagram-caption">Red = C (root, home). Green = other notes. Land on C for the bright sound.</p>
+  </Block>
+
+  <Block type="diagram" title="Am MINOR PENT vs C MAJOR PENT — SAME NOTES, DIFFERENT HOME">
+    <svg viewBox="0 0 320 170" width="100%" style="display:block" role="img" aria-label="Am minor pentatonic vs C major pentatonic comparison">
+      {#if true}
+      {@const SS = 18}
+      {@const FS = 28}
+      {@const PT = 22}
+      <text x="68" y="12" text-anchor="middle" font-size="9" font-weight="800" fill={ROOT}>A minor pentatonic</text>
+      <text x="68" y="22" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.6">dark, bluesy</text>
+      {#each Array(6) as _, si}
+        <line x1="8" y1={PT+si*SS} x2="128" y2={PT+si*SS} stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+      {/each}
+      {#each Array(5) as _, fi}
+        <line x1={8+fi*FS} y1={PT-4} x2={8+fi*FS} y2={PT+5*SS+4} stroke="currentColor" stroke-width="0.8" opacity="0.15"/>
+      {/each}
+      {#each [
+        {si:0,fo:0,root:true},{si:0,fo:3,root:false},
+        {si:1,fo:0,root:false},{si:1,fo:3,root:false},
+        {si:2,fo:0,root:false},{si:2,fo:2,root:false},
+        {si:3,fo:0,root:false},{si:3,fo:2,root:true},
+        {si:4,fo:0,root:false},{si:4,fo:2,root:false},
+        {si:5,fo:0,root:true},{si:5,fo:3,root:false},
+      ] as n}
+        {@const cx = 8 + n.fo*FS + FS/2}
+        {@const cy = PT + n.si*SS}
+        <circle cx={cx} cy={cy} r={n.root?8:6.5} fill={n.root?ROOT:OTHER} opacity="0.85"/>
+        {#if n.root}<text x={cx} y={cy+3} text-anchor="middle" font-size="7" fill="white" font-weight="800">A</text>{/if}
+      {/each}
+      {#each [5,6,7,8,9] as fn, fi}
+        <text x={8+fi*FS+FS/2} y={PT+5*SS+14} text-anchor="middle" font-size="7" fill="currentColor" opacity="0.4">{fn}</text>
+      {/each}
+
+      <text x="160" y="84" text-anchor="middle" font-size="24" fill={ORANGE} opacity="0.8">↔</text>
+      <text x="160" y="98" text-anchor="middle" font-size="7" fill={ORANGE}>Same 5 notes.</text>
+      <text x="160" y="108" text-anchor="middle" font-size="7" fill={ORANGE}>Different</text>
+      <text x="160" y="118" text-anchor="middle" font-size="7" fill={ORANGE}>home base.</text>
+
+      <text x="258" y="12" text-anchor="middle" font-size="9" font-weight="800" fill="#16A34A">C major pentatonic</text>
+      <text x="258" y="22" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.6">bright, happy</text>
+      {#each Array(6) as _, si}
+        <line x1="198" y1={PT+si*SS} x2="318" y2={PT+si*SS} stroke="currentColor" stroke-width="0.8" opacity="0.4"/>
+      {/each}
+      {#each Array(5) as _, fi}
+        <line x1={198+fi*FS} y1={PT-4} x2={198+fi*FS} y2={PT+5*SS+4} stroke="currentColor" stroke-width="0.8" opacity="0.15"/>
+      {/each}
+      {#each [
+        {si:0,fo:0,root:false},{si:0,fo:3,root:true},
+        {si:1,fo:0,root:false},{si:1,fo:3,root:false},
+        {si:2,fo:0,root:true},{si:2,fo:2,root:false},
+        {si:3,fo:0,root:false},{si:3,fo:2,root:false},
+        {si:4,fo:0,root:false},{si:4,fo:2,root:false},
+        {si:5,fo:0,root:false},{si:5,fo:3,root:true},
+      ] as n}
+        {@const cx = 198 + n.fo*FS + FS/2}
+        {@const cy = PT + n.si*SS}
+        <circle cx={cx} cy={cy} r={n.root?8:6.5} fill={n.root?'#16A34A':OTHER} opacity="0.85"/>
+        {#if n.root}<text x={cx} y={cy+3} text-anchor="middle" font-size="7" fill="white" font-weight="800">C</text>{/if}
+      {/each}
+      {#each [5,6,7,8,9] as fn, fi}
+        <text x={198+fi*FS+FS/2} y={PT+5*SS+14} text-anchor="middle" font-size="7" fill="currentColor" opacity="0.4">{fn}</text>
+      {/each}
+
+      <text x="160" y="148" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.7">Red = A (minor root) · Green = C (major root)</text>
+      <text x="160" y="160" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.6">Am pent starting from C = C major pent instantly</text>
+      {/if}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="WHEN TO USE WHICH">
+    <svg viewBox="0 0 320 130" width="100%" style="display:block" role="img" aria-label="When to use major vs minor pentatonic">
+      {#if true}
+      <rect x="100" y="4" width="120" height="24" rx="5" fill="#7C3AED" opacity="0.85"/>
+      <text x="160" y="20" text-anchor="middle" font-size="9" font-weight="800" fill="white">What's the chord?</text>
+      <line x1="140" y1="28" x2="80" y2="50" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+      <text x="96" y="42" font-size="7.5" fill="currentColor" opacity="0.6">Am</text>
+      <rect x="14" y="50" width="132" height="22" rx="4" fill={ROOT} opacity="0.15"/>
+      <text x="80" y="59" text-anchor="middle" font-size="8" font-weight="800" fill={ROOT}>Am pentatonic</text>
+      <text x="80" y="69" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.7">dark, bluesy ✓</text>
+      <line x1="180" y1="28" x2="240" y2="50" stroke="currentColor" stroke-width="1" opacity="0.4"/>
+      <text x="217" y="42" font-size="7.5" fill="currentColor" opacity="0.6">C major</text>
+      <rect x="172" y="50" width="136" height="22" rx="4" fill="#16A34A" opacity="0.15"/>
+      <text x="240" y="59" text-anchor="middle" font-size="8" font-weight="800" fill="#16A34A">C major pentatonic</text>
+      <text x="240" y="69" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.7">bright, happy ✓</text>
+      <line x1="80" y1="72" x2="100" y2="90" stroke={ORANGE} stroke-width="1.5" stroke-dasharray="3,2"/>
+      <text x="55" y="86" font-size="7" fill={ORANGE}>also over Am:</text>
+      <rect x="56" y="90" width="136" height="20" rx="4" fill={ORANGE} opacity="0.15"/>
+      <text x="124" y="98" text-anchor="middle" font-size="7.5" font-weight="700" fill={ORANGE}>C major pent → brighter sound</text>
+      <text x="124" y="108" text-anchor="middle" font-size="7" fill="currentColor" opacity="0.6">relative major trick — also works!</text>
+      <rect x="60" y="114" width="200" height="16" rx="4" fill="#7C3AED" opacity="0.15"/>
+      <text x="160" y="125" text-anchor="middle" font-size="8" font-weight="700" fill="#7C3AED">MIX BOTH over blues → classic technique 🎸</text>
+      {/if}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="ALL 5 MAJOR PENTATONIC BOXES — FULL NECK">
+    <svg viewBox="0 0 500 140" width="100%" style="display:block" role="img" aria-label="All 5 C major pentatonic boxes on full neck">
+      {#if true}
+      {@const SS = 16}
+      {@const FS = 30}
+      {@const PL = 28}
+      {@const PT = 18}
+      {@const BOX_COLORS = ['#16A34A','#2563EB','#D97706','#7C3AED','#DC2626']}
+      {#each Array(6) as _, si}
+        <line x1={PL} y1={PT+si*SS} x2={PL+16*FS} y2={PT+si*SS} stroke="currentColor" stroke-width={si>=3?1+(si-3)*0.3:0.8} opacity="0.4"/>
+      {/each}
+      <line x1={PL} y1={PT-4} x2={PL} y2={PT+5*SS+4} stroke="currentColor" stroke-width="3" opacity="0.5"/>
+      {#each Array(17) as _, fi}
+        <line x1={PL+fi*FS} y1={PT-4} x2={PL+fi*FS} y2={PT+5*SS+4} stroke="currentColor" stroke-width="0.8" opacity="0.15"/>
+      {/each}
+      {#each ['e','B','G','D','A','E'] as sn, si}
+        <text x={PL-8} y={PT+si*SS+4} text-anchor="middle" font-size="8" fill="currentColor" opacity="0.6" font-family="monospace">{sn}</text>
+      {/each}
+      <!-- C major pentatonic: C(0) D(2) E(4) G(7) A(9) -->
+      {@const MAJ_PENT = new Set([0,2,4,7,9])}
+      {#each Array(6) as _, si}
+        {@const openIdx = OPEN_NOTES[si]}
+        {#each Array(16) as _, fi}
+          {@const noteIdx = (openIdx + fi) % 12}
+          {#if MAJ_PENT.has(noteIdx)}
+            {@const isRoot = noteIdx === 0}
+            {@const boxNum = fi <= 2 ? 5 : fi <= 5 ? 1 : fi <= 8 ? 2 : fi <= 11 ? 3 : 4}
+            {@const col = isRoot ? ROOT : BOX_COLORS[boxNum - 1]}
+            {@const cx = PL + fi * FS + FS/2}
+            {@const cy = PT + si * SS}
+            <circle cx={cx} cy={cy} r={isRoot?7.5:6} fill={col} opacity={isRoot?1:0.8}/>
+            {#if isRoot}
+              <text x={cx} y={cy+3} text-anchor="middle" font-size="6" fill="white" font-weight="700">C</text>
+            {/if}
+          {/if}
+        {/each}
+      {/each}
+      {#each [0,3,5,7,9,12,15] as fn}
+        <text x={PL+fn*FS} y={PT+5*SS+16} text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.5">{fn}</text>
+      {/each}
+      {#each [{n:1,x:PL+5.5*FS},{n:2,x:PL+8.5*FS},{n:3,x:PL+10.5*FS},{n:4,x:PL+13.5*FS},{n:5,x:PL+3.5*FS}] as bl}
+        <text x={bl.x} y={PT+5*SS+28} text-anchor="middle" font-size="8" fill={BOX_COLORS[bl.n-1]} font-weight="700">Box {bl.n}</text>
+      {/each}
+      {/if}
+    </svg>
+    <p class="diagram-caption">Red circles = C (root). Same 5-note pattern across 5 positions.</p>
+  </Block>
+
+  <Block type="tip">
+    <p>Am pentatonic and C major pentatonic use the exact same notes. Play Am pent box 1 but start and end on C — you're now playing C major pentatonic. Mix both over a blues for the classic hybrid sound.</p>
+  </Block>
+
+  <Block type="avoid">
+    <p>Don't only learn minor pentatonic. Major pent opens completely different musical territory — country, pop, bright rock leads all live here.</p>
+  </Block>
+
+  <Block type="dothis">
+    <p>Play Am pent box 1. Now find where C is and treat it as home. Hear the difference? Then alternate — end one lick on A (minor), next lick on C (major). Two personalities, same box.</p>
+  </Block>
+
+  <Block type="check">
+    <CheckItem id="p6-c1" label="Know C major pent box 1 position" />
+    <CheckItem id="p6-c2" label="Can hear the difference between major and minor pent" />
+    <CheckItem id="p6-c3" label="Know which to use over major vs minor chords" />
+    <CheckItem id="p6-c4" label="Can mix both pentatonics over a blues backing track" />
+  </Block>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     PHASE 7: Minor Pentatonic Box 1
+════════════════════════════════════════════════════ -->
+<section class="section phase" id="phase-7">
+  <div class="phase-header" style="--accent:#16A34A">
+    <span class="phase-num">Phase 7</span>
     <h2 class="phase-title">Minor Pentatonic Box 1</h2>
   </div>
 
@@ -1326,19 +1913,19 @@
   </Block>
 
   <Block type="check">
-    <CheckItem id="p4-c1" label="Box 1 from memory, up and down" />
-    <CheckItem id="p4-c2" label="Can play Box 1 smoothly at 60 BPM" />
-    <CheckItem id="p4-c3" label="Know where all root notes (A) are in Box 1" />
-    <CheckItem id="p4-c4" label="Can execute a clean hammer-on" />
+    <CheckItem id="p7-c1" label="Box 1 from memory, up and down" />
+    <CheckItem id="p7-c2" label="Can play Box 1 smoothly at 60 BPM" />
+    <CheckItem id="p7-c3" label="Know where all root notes (A) are in Box 1" />
+    <CheckItem id="p7-c4" label="Can execute a clean hammer-on" />
   </Block>
 </section>
 
 <!-- ═══════════════════════════════════════════════════
-     PHASE 5: All 5 Pentatonic Boxes
+     PHASE 8: All 5 Pentatonic Boxes
 ════════════════════════════════════════════════════ -->
-<section class="section phase" id="phase-5">
+<section class="section phase" id="phase-8">
   <div class="phase-header" style="--accent:#D97706">
-    <span class="phase-num">Phase 5</span>
+    <span class="phase-num">Phase 8</span>
     <h2 class="phase-title">All 5 Pentatonic Boxes</h2>
   </div>
 
@@ -1469,19 +2056,19 @@
   </Block>
 
   <Block type="check">
-    <CheckItem id="p5-c1" label="Know all 5 box positions on the neck" />
-    <CheckItem id="p5-c2" label="Can transition Box 1 → Box 2 smoothly" />
-    <CheckItem id="p5-c3" label="Can transition Box 2 → Box 3" />
-    <CheckItem id="p5-c4" label="Can play across the full neck (frets 0–15)" />
+    <CheckItem id="p8-c1" label="Know all 5 box positions on the neck" />
+    <CheckItem id="p8-c2" label="Can transition Box 1 → Box 2 smoothly" />
+    <CheckItem id="p8-c3" label="Can transition Box 2 → Box 3" />
+    <CheckItem id="p8-c4" label="Can play across the full neck (frets 0–15)" />
   </Block>
 </section>
 
 <!-- ═══════════════════════════════════════════════════
-     PHASE 6: Scales Meet Chords
+     PHASE 9: Scales Meet Chords
 ════════════════════════════════════════════════════ -->
-<section class="section phase" id="phase-6">
+<section class="section phase" id="phase-9">
   <div class="phase-header" style="--accent:#D97706">
-    <span class="phase-num">Phase 6</span>
+    <span class="phase-num">Phase 9</span>
     <h2 class="phase-title">Scales Meet Chords</h2>
   </div>
 
@@ -1560,19 +2147,19 @@
   </Block>
 
   <Block type="check">
-    <CheckItem id="p6-c1" label="Can identify chord tones vs passing tones in Box 1" />
-    <CheckItem id="p6-c2" label="Can intentionally end a lick on the root" />
-    <CheckItem id="p6-c3" label="Can create tension by ending on b7" />
-    <CheckItem id="p6-c4" label="Can hear the emotional difference between resolutions" />
+    <CheckItem id="p9-c1" label="Can identify chord tones vs passing tones in Box 1" />
+    <CheckItem id="p9-c2" label="Can intentionally end a lick on the root" />
+    <CheckItem id="p9-c3" label="Can create tension by ending on b7" />
+    <CheckItem id="p9-c4" label="Can hear the emotional difference between resolutions" />
   </Block>
 </section>
 
 <!-- ═══════════════════════════════════════════════════
-     PHASE 7: Natural Minor Scale
+     PHASE 10: Natural Minor Scale
 ════════════════════════════════════════════════════ -->
-<section class="section phase" id="phase-7">
+<section class="section phase" id="phase-10">
   <div class="phase-header" style="--accent:#D97706">
-    <span class="phase-num">Phase 7</span>
+    <span class="phase-num">Phase 10</span>
     <h2 class="phase-title">Natural Minor Scale</h2>
   </div>
 
@@ -1684,19 +2271,19 @@
   </Block>
 
   <Block type="check">
-    <CheckItem id="p7-c1" label="Know positions of 2nd (B) and b6th (F) in position" />
-    <CheckItem id="p7-c2" label="Can play full natural minor in position at 70 BPM" />
-    <CheckItem id="p7-c3" label="Can add natural minor notes to pentatonic phrasing" />
-    <CheckItem id="p7-c4" label="Sounds musical, not like a scale exercise" />
+    <CheckItem id="p10-c1" label="Know positions of 2nd (B) and b6th (F) in position" />
+    <CheckItem id="p10-c2" label="Can play full natural minor in position at 70 BPM" />
+    <CheckItem id="p10-c3" label="Can add natural minor notes to pentatonic phrasing" />
+    <CheckItem id="p10-c4" label="Sounds musical, not like a scale exercise" />
   </Block>
 </section>
 
 <!-- ═══════════════════════════════════════════════════
-     PHASE 8: Harmonic Minor Scale — THE ANIME SOUND
+     PHASE 11: Harmonic Minor Scale — THE ANIME SOUND
 ════════════════════════════════════════════════════ -->
-<section class="section phase" id="phase-8">
+<section class="section phase" id="phase-11">
   <div class="phase-header" style="--accent:#D97706">
-    <span class="phase-num">Phase 8</span>
+    <span class="phase-num">Phase 11</span>
     <h2 class="phase-title">Harmonic Minor — The Anime Sound</h2>
   </div>
 
@@ -1831,19 +2418,19 @@
   </Block>
 
   <Block type="check">
-    <CheckItem id="p8-c1" label="Know where G# is in the shape (one fret above G)" />
-    <CheckItem id="p8-c2" label="Can play full harmonic minor in position" />
-    <CheckItem id="p8-c3" label="Can play the F→G#→A resolution lick cleanly" />
-    <CheckItem id="p8-c4" label="Can hear the anime/flamenco character" />
+    <CheckItem id="p11-c1" label="Know where G# is in the shape (one fret above G)" />
+    <CheckItem id="p11-c2" label="Can play full harmonic minor in position" />
+    <CheckItem id="p11-c3" label="Can play the F→G#→A resolution lick cleanly" />
+    <CheckItem id="p11-c4" label="Can hear the anime/flamenco character" />
   </Block>
 </section>
 
 <!-- ═══════════════════════════════════════════════════
-     PHASE 9: Techniques for Speed
+     PHASE 12: Techniques for Speed
 ════════════════════════════════════════════════════ -->
-<section class="section phase" id="phase-9">
+<section class="section phase" id="phase-12">
   <div class="phase-header" style="--accent:#DC2626">
-    <span class="phase-num">Phase 9</span>
+    <span class="phase-num">Phase 12</span>
     <h2 class="phase-title">Techniques for Speed</h2>
   </div>
 
@@ -1945,19 +2532,19 @@
   </Block>
 
   <Block type="check">
-    <CheckItem id="p9-c1" label="Alternate picking clean at 100 BPM" />
-    <CheckItem id="p9-c2" label="Legato runs clean at 80 BPM" />
-    <CheckItem id="p9-c3" label="Spider exercise clean at 100 BPM" />
-    <CheckItem id="p9-c4" label="Economy picking on string changes" />
+    <CheckItem id="p12-c1" label="Alternate picking clean at 100 BPM" />
+    <CheckItem id="p12-c2" label="Legato runs clean at 80 BPM" />
+    <CheckItem id="p12-c3" label="Spider exercise clean at 100 BPM" />
+    <CheckItem id="p12-c4" label="Economy picking on string changes" />
   </Block>
 </section>
 
 <!-- ═══════════════════════════════════════════════════
-     PHASE 10: Phrasing & Musicality
+     PHASE 13: Phrasing & Musicality
 ════════════════════════════════════════════════════ -->
-<section class="section phase" id="phase-10">
+<section class="section phase" id="phase-13">
   <div class="phase-header" style="--accent:#DC2626">
-    <span class="phase-num">Phase 10</span>
+    <span class="phase-num">Phase 13</span>
     <h2 class="phase-title">Phrasing & Musicality</h2>
   </div>
 
@@ -2043,19 +2630,19 @@
   </Block>
 
   <Block type="check">
-    <CheckItem id="p10-c1" label="Can execute controlled, in-tune vibrato" />
-    <CheckItem id="p10-c2" label="Can bend in tune (match target pitch)" />
-    <CheckItem id="p10-c3" label="Intentionally uses space and silence in phrasing" />
-    <CheckItem id="p10-c4" label="Phrases sound like singing, not scale exercises" />
+    <CheckItem id="p13-c1" label="Can execute controlled, in-tune vibrato" />
+    <CheckItem id="p13-c2" label="Can bend in tune (match target pitch)" />
+    <CheckItem id="p13-c3" label="Intentionally uses space and silence in phrasing" />
+    <CheckItem id="p13-c4" label="Phrases sound like singing, not scale exercises" />
   </Block>
 </section>
 
 <!-- ═══════════════════════════════════════════════════
-     PHASE 11: Putting It All Together
+     PHASE 14: Putting It All Together
 ════════════════════════════════════════════════════ -->
-<section class="section phase" id="phase-11">
+<section class="section phase" id="phase-14">
   <div class="phase-header" style="--accent:#DC2626">
-    <span class="phase-num">Phase 11</span>
+    <span class="phase-num">Phase 14</span>
     <h2 class="phase-title">Putting It All Together</h2>
   </div>
 
@@ -2151,19 +2738,19 @@
   </Block>
 
   <Block type="check">
-    <CheckItem id="p11-c1" label="Can structure an improvised solo (intro→build→climax→resolve)" />
-    <CheckItem id="p11-c2" label="Uses all 3 scales intentionally in one solo" />
-    <CheckItem id="p11-c3" label="Phrasing sounds musical, not like scale exercises" />
-    <CheckItem id="p11-c4" label="Ready to transcribe an anime opening guitar solo" />
+    <CheckItem id="p14-c1" label="Can structure an improvised solo (intro→build→climax→resolve)" />
+    <CheckItem id="p14-c2" label="Uses all 3 scales intentionally in one solo" />
+    <CheckItem id="p14-c3" label="Phrasing sounds musical, not like scale exercises" />
+    <CheckItem id="p14-c4" label="Ready to transcribe an anime opening guitar solo" />
   </Block>
 </section>
 
 <!-- ═══════════════════════════════════════════════════
-     PHASE 12 — THE MODES
+     PHASE 15 — THE MODES
 ════════════════════════════════════════════════════ -->
-<section class="section phase" id="phase-12">
+<section class="section phase" id="phase-15">
   <div class="phase-header" style="--accent:#7C3AED">
-    <span class="phase-num">Phase 12</span>
+    <span class="phase-num">Phase 15</span>
     <h2 class="phase-title">The Modes</h2>
   </div>
 
@@ -2521,19 +3108,19 @@
   </Block>
 
   <Block type="check">
-    <CheckItem id="p12-c1" label="Know Dorian shape and sound — can play it over a backing track" />
-    <CheckItem id="p12-c2" label="Know Mixolydian over dominant 7th chords" />
-    <CheckItem id="p12-c3" label="Know Phrygian character (that dark ♭2 note)" />
-    <CheckItem id="p12-c4" label="Can identify which mode suits which chord type" />
+    <CheckItem id="p15-c1" label="Know Dorian shape and sound — can play it over a backing track" />
+    <CheckItem id="p15-c2" label="Know Mixolydian over dominant 7th chords" />
+    <CheckItem id="p15-c3" label="Know Phrygian character (that dark ♭2 note)" />
+    <CheckItem id="p15-c4" label="Can identify which mode suits which chord type" />
   </Block>
 </section>
 
 <!-- ═══════════════════════════════════════════════════
-     PHASE 13 — EAR TRAINING
+     PHASE 16 — EAR TRAINING
 ════════════════════════════════════════════════════ -->
-<section class="section phase" id="phase-13">
+<section class="section phase" id="phase-16">
   <div class="phase-header" style="--accent:#059669">
-    <span class="phase-num">Phase 13</span>
+    <span class="phase-num">Phase 16</span>
     <h2 class="phase-title">Ear Training</h2>
   </div>
 
@@ -2691,19 +3278,19 @@
   </Block>
 
   <Block type="check">
-    <CheckItem id="p13-c1" label="Can identify major vs minor chord by ear instantly" />
-    <CheckItem id="p13-c2" label="Know 5 interval anchors (can sing/recognise them)" />
-    <CheckItem id="p13-c3" label="Can find the key of a simple song by ear" />
-    <CheckItem id="p13-c4" label="Can sing a lick before playing it on guitar" />
+    <CheckItem id="p16-c1" label="Can identify major vs minor chord by ear instantly" />
+    <CheckItem id="p16-c2" label="Know 5 interval anchors (can sing/recognise them)" />
+    <CheckItem id="p16-c3" label="Can find the key of a simple song by ear" />
+    <CheckItem id="p16-c4" label="Can sing a lick before playing it on guitar" />
   </Block>
 </section>
 
 <!-- ═══════════════════════════════════════════════════
-     PHASE 14 — PRACTICE STRUCTURE
+     PHASE 17 — PRACTICE STRUCTURE
 ════════════════════════════════════════════════════ -->
-<section class="section phase" id="phase-14">
+<section class="section phase" id="phase-17">
   <div class="phase-header" style="--accent:#0284C7">
-    <span class="phase-num">Phase 14</span>
+    <span class="phase-num">Phase 17</span>
     <h2 class="phase-title">Practice Structure</h2>
   </div>
 
@@ -2848,10 +3435,10 @@
   </Block>
 
   <Block type="check">
-    <CheckItem id="p14-c1" label="Have a written practice routine — not just winging it" />
-    <CheckItem id="p14-c2" label="Practice with a metronome every single session" />
-    <CheckItem id="p14-c3" label="Record yourself weekly and listen back" />
-    <CheckItem id="p14-c4" label="Can identify your current weakest skill and drill it" />
+    <CheckItem id="p17-c1" label="Have a written practice routine — not just winging it" />
+    <CheckItem id="p17-c2" label="Practice with a metronome every single session" />
+    <CheckItem id="p17-c3" label="Record yourself weekly and listen back" />
+    <CheckItem id="p17-c4" label="Can identify your current weakest skill and drill it" />
   </Block>
 </section>
 
