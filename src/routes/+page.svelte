@@ -22,6 +22,9 @@
     { n: 9, name: 'Techniques for Speed' },
     { n: 10, name: 'Phrasing & Musicality' },
     { n: 11, name: 'All Together' },
+    { n: 12, name: 'The Modes' },
+    { n: 13, name: 'Ear Training' },
+    { n: 14, name: 'Practice Structure' },
   ];
 
   function scrollToPhase(n: number) {
@@ -1448,6 +1451,703 @@
     <CheckItem id="p11-c2" label="Uses all 3 scales intentionally in one solo" />
     <CheckItem id="p11-c3" label="Phrasing sounds musical, not like scale exercises" />
     <CheckItem id="p11-c4" label="Ready to transcribe an anime opening guitar solo" />
+  </Block>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     PHASE 12 — THE MODES
+════════════════════════════════════════════════════ -->
+<section class="section phase" id="phase-12">
+  <div class="phase-header" style="--accent:#7C3AED">
+    <span class="phase-num">Phase 12</span>
+    <h2 class="phase-title">The Modes</h2>
+  </div>
+
+  <Block type="concept">
+    <p>Modes are <strong>NOT new scales</strong>. They are the major scale started from a different note. You already know all the notes — you're just choosing a different home base. The same 7 notes, 7 different tonal centres, 7 completely different characters.</p>
+  </Block>
+
+  <Block type="diagram" title="MODES AS STARTING POINTS — C MAJOR SCALE, STRING 5">
+    <div style="overflow-x:auto">
+    <svg viewBox="0 0 520 290" width="100%" style="display:block;min-width:420px" role="img" aria-label="Seven modes shown as starting points on the C major scale">
+      <!-- C major scale on string 5, frets 8-20 -->
+      <!-- String line -->
+      <line x1="20" y1="30" x2="510" y2="30" stroke="currentColor" stroke-width="1.5" opacity="0.4"/>
+      <!-- Fret markers: frets 8-20 = 13 frets, spaced -->
+      {#each Array(13) as _, i}
+        {@const fx = 20 + i * 38}
+        <line x1={fx} y1="18" x2={fx} y2="42" stroke="currentColor" stroke-width="0.8" opacity="0.2"/>
+        <text x={fx+19} y="52" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.4">{i+8}</text>
+      {/each}
+      <!-- C major notes on string 5: A string open=A, fret8=F, fret9=F#, fret10=G, fret12=A... -->
+      <!-- A string (open=A index 9): fret 3=C, fret 5=D, fret 7=E, fret 8=F, fret 10=G, fret 12=A, fret 14=B, fret 15=C -->
+      <!-- Re-map to our display: fret 8=F#... wait let me recalculate -->
+      <!-- CHROMATIC from A: A A# B C C# D D# E F F# G G# = indices 0-11 -->
+      <!-- fret 3 = C (idx 3), fret 5 = D (idx 5), fret 7 = E (idx 7), fret 8 = F (idx 8), fret 10 = G (idx 10), fret 12 = A (idx 12%12=0), fret 14 = B, fret 15 = C -->
+      <!-- Display frets 3-15 on the A string to show C D E F G A B C -->
+      <!-- But task says frets 8-20. Let me use absolute fret positions relative to display: -->
+      <!-- Scale degrees: C(fr3), D(fr5), E(fr7), F(fr8), G(fr10), A(fr12), B(fr14), C(fr15) -->
+      <!-- Map these to x positions: fr3 = 20+0*38=20 but we show frets 3-15 -->
+      <!-- Let's rescale: fret 3 to fret 15 = 12 frets, space=36px each -->
+      {#each [
+        {note:'C', fret:3, color:'#DC2626'},
+        {note:'D', fret:5, color:'#1A1A2E'},
+        {note:'E', fret:7, color:'#1A1A2E'},
+        {note:'F', fret:8, color:'#1A1A2E'},
+        {note:'G', fret:10, color:'#1A1A2E'},
+        {note:'A', fret:12, color:'#1A1A2E'},
+        {note:'B', fret:14, color:'#1A1A2E'},
+        {note:'C', fret:15, color:'#DC2626'},
+      ] as n}
+        {@const cx = 20 + (n.fret - 3) * 38 + 19}
+        <circle cx={cx} cy="30" r="12" fill={n.color} opacity="0.9"/>
+        <text x={cx} y="34" text-anchor="middle" font-size="9" font-weight="700" fill="white">{n.note}</text>
+      {/each}
+      <text x="10" y="34" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.5">A</text>
+
+      <!-- 7 mode rows -->
+      {#each [
+        {mode:'Ionian',    start:'C', fret:3,  startColor:'#DC2626', char:'Major scale / Happy',         textColor:'#16A34A'},
+        {mode:'Dorian',    start:'D', fret:5,  startColor:'#DC2626', char:'Minor +♯6 / Jazzy-bluesy',    textColor:'#2563EB'},
+        {mode:'Phrygian',  start:'E', fret:7,  startColor:'#DC2626', char:'Minor +♭2 / Dark-Spanish',    textColor:'#7C3AED'},
+        {mode:'Lydian',    start:'F', fret:8,  startColor:'#DC2626', char:'Major +♯4 / Dreamy-floating', textColor:'#0891B2'},
+        {mode:'Mixolydian',start:'G', fret:10, startColor:'#DC2626', char:'Major +♭7 / Rock-bluesy',     textColor:'#D97706'},
+        {mode:'Aeolian',   start:'A', fret:12, startColor:'#DC2626', char:'Natural minor (you know this)',textColor:'#9CA3AF'},
+        {mode:'Locrian',   start:'B', fret:14, startColor:'#DC2626', char:'Diminished / Dissonant-rare', textColor:'#111827'},
+      ] as m, mi}
+        {@const rowY = 70 + mi * 30}
+        {@const startX = 20 + (m.fret - 3) * 38 + 19}
+        <!-- Row line -->
+        <line x1={startX} y1={rowY} x2="480" y2={rowY} stroke="currentColor" stroke-width="0.5" opacity="0.1"/>
+        <!-- Mode name -->
+        <text x={startX - 4} y={rowY + 5} text-anchor="end" font-size="9" font-weight="700" fill={m.textColor}>{m.mode}</text>
+        <!-- Starting note circle -->
+        <circle cx={startX} cy={rowY} r="9" fill={m.startColor} opacity="0.9"/>
+        <text x={startX} y={rowY + 4} text-anchor="middle" font-size="8" font-weight="700" fill="white">{m.start}</text>
+        <!-- Character label -->
+        <text x={startX + 16} y={rowY + 5} font-size="8.5" fill={m.textColor} opacity="0.9">{m.char}</text>
+      {/each}
+    </svg>
+    </div>
+  </Block>
+
+  <Block type="diagram" title="A DORIAN vs A NATURAL MINOR — ONE NOTE DIFFERENCE">
+    <svg viewBox="0 0 320 140" width="100%" style="display:block;max-width:400px;margin:0 auto" role="img" aria-label="A Dorian vs A Natural Minor comparison">
+      <!-- Labels -->
+      <text x="70" y="14" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" opacity="0.7">A Natural Minor</text>
+      <text x="248" y="14" text-anchor="middle" font-size="9" font-weight="700" fill="#D97706">A Dorian</text>
+      <!-- Left fretboard (Natural Minor) -->
+      {#each Array(6) as _, si}
+        <line x1="22" y1={24+si*16} x2="118" y2={24+si*16} stroke="currentColor" stroke-width={si>=3?0.8+si*0.15:0.6} opacity="0.4"/>
+      {/each}
+      {#each [22,46,70,94,118] as fx}
+        <line x1={fx} y1="18" x2={fx} y2="106" stroke="currentColor" stroke-width={fx===22?2:0.6} opacity={fx===22?0.5:0.15}/>
+      {/each}
+      {#each [
+        {si:0,fo:1,n:'R',c:'#DC2626'},{si:0,fo:3,n:'b3',c:'#374151'},
+        {si:1,fo:1,n:'5',c:'#374151'},{si:1,fo:3,n:'b7',c:'#374151'},
+        {si:2,fo:0,n:'4',c:'#374151'},{si:2,fo:2,n:'5',c:'#374151'},
+        {si:3,fo:0,n:'R',c:'#DC2626'},{si:3,fo:2,n:'2',c:'#374151'},
+        {si:4,fo:0,n:'6',c:'#374151'},{si:4,fo:2,n:'b7',c:'#374151'},
+        {si:5,fo:1,n:'R',c:'#DC2626'},{si:5,fo:3,n:'b3',c:'#374151'},
+      ] as dot}
+        {@const cx = 22 + dot.fo*24 + 12}
+        {@const cy = 24 + dot.si*16}
+        <circle cx={cx} cy={cy} r="8" fill={dot.c} opacity="0.9"/>
+        <text x={cx} y={cy+4} text-anchor="middle" font-size="6.5" fill="white" font-weight="600">{dot.n}</text>
+      {/each}
+      <!-- Divider -->
+      <line x1="160" y1="10" x2="160" y2="115" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3" opacity="0.3"/>
+      <!-- Right fretboard (Dorian — same but F→F#, i.e. b6→6) -->
+      {#each Array(6) as _, si}
+        <line x1="200" y1={24+si*16} x2="296" y2={24+si*16} stroke="currentColor" stroke-width={si>=3?0.8+si*0.15:0.6} opacity="0.4"/>
+      {/each}
+      {#each [200,224,248,272,296] as fx}
+        <line x1={fx} y1="18" x2={fx} y2="106" stroke="currentColor" stroke-width={fx===200?2:0.6} opacity={fx===200?0.5:0.15}/>
+      {/each}
+      {#each [
+        {si:0,fo:1,n:'R',c:'#DC2626'},{si:0,fo:3,n:'b3',c:'#374151'},
+        {si:1,fo:1,n:'5',c:'#374151'},{si:1,fo:3,n:'b7',c:'#374151'},
+        {si:2,fo:0,n:'4',c:'#374151'},{si:2,fo:2,n:'5',c:'#374151'},
+        {si:3,fo:0,n:'R',c:'#DC2626'},{si:3,fo:2,n:'2',c:'#374151'},
+        {si:4,fo:0,n:'♯6',c:'#F97316'},{si:4,fo:2,n:'b7',c:'#374151'},
+        {si:5,fo:1,n:'R',c:'#DC2626'},{si:5,fo:3,n:'b3',c:'#374151'},
+      ] as dot}
+        {@const cx = 200 + dot.fo*24 + 12}
+        {@const cy = 24 + dot.si*16}
+        <circle cx={cx} cy={cy} r="8" fill={dot.c} opacity="0.9"/>
+        <text x={cx} y={cy+4} text-anchor="middle" font-size="6.5" fill="white" font-weight="600">{dot.n}</text>
+        {#if dot.n === '♯6'}
+          <text x={cx+8} y={cy-8} text-anchor="middle" font-size="11" fill="#F97316">★</text>
+        {/if}
+      {/each}
+      <text x="160" y="128" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.6" font-style="italic">One note brighter. Dorian = natural minor's cooler sibling.</text>
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="A PHRYGIAN — THE ♭2 CHARACTER">
+    <svg viewBox="0 0 320 140" width="100%" style="display:block;max-width:400px;margin:0 auto" role="img" aria-label="A Phrygian vs A Natural Minor comparison">
+      <text x="70" y="14" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" opacity="0.7">A Natural Minor</text>
+      <text x="248" y="14" text-anchor="middle" font-size="9" font-weight="700" fill="#4C1D95">A Phrygian</text>
+      <!-- Left fretboard -->
+      {#each Array(6) as _, si}
+        <line x1="22" y1={24+si*16} x2="118" y2={24+si*16} stroke="currentColor" stroke-width={si>=3?0.8+si*0.15:0.6} opacity="0.4"/>
+      {/each}
+      {#each [22,46,70,94,118] as fx}
+        <line x1={fx} y1="18" x2={fx} y2="106" stroke="currentColor" stroke-width={fx===22?2:0.6} opacity={fx===22?0.5:0.15}/>
+      {/each}
+      {#each [
+        {si:0,fo:1,n:'R',c:'#DC2626'},{si:0,fo:3,n:'b3',c:'#374151'},
+        {si:1,fo:1,n:'5',c:'#374151'},{si:1,fo:3,n:'b7',c:'#374151'},
+        {si:2,fo:0,n:'4',c:'#374151'},{si:2,fo:2,n:'5',c:'#374151'},
+        {si:3,fo:0,n:'R',c:'#DC2626'},{si:3,fo:2,n:'2',c:'#374151'},
+        {si:4,fo:0,n:'6',c:'#374151'},{si:4,fo:2,n:'b7',c:'#374151'},
+        {si:5,fo:1,n:'R',c:'#DC2626'},{si:5,fo:3,n:'b3',c:'#374151'},
+      ] as dot}
+        {@const cx = 22 + dot.fo*24 + 12}
+        {@const cy = 24 + dot.si*16}
+        <circle cx={cx} cy={cy} r="8" fill={dot.c} opacity="0.9"/>
+        <text x={cx} y={cy+4} text-anchor="middle" font-size="6.5" fill="white" font-weight="600">{dot.n}</text>
+      {/each}
+      <!-- Divider -->
+      <line x1="160" y1="10" x2="160" y2="115" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3" opacity="0.3"/>
+      <!-- Right fretboard (Phrygian — b2 instead of 2) -->
+      {#each Array(6) as _, si}
+        <line x1="200" y1={24+si*16} x2="296" y2={24+si*16} stroke="currentColor" stroke-width={si>=3?0.8+si*0.15:0.6} opacity="0.4"/>
+      {/each}
+      {#each [200,224,248,272,296] as fx}
+        <line x1={fx} y1="18" x2={fx} y2="106" stroke="currentColor" stroke-width={fx===200?2:0.6} opacity={fx===200?0.5:0.15}/>
+      {/each}
+      {#each [
+        {si:0,fo:1,n:'R',c:'#DC2626'},{si:0,fo:3,n:'b3',c:'#374151'},
+        {si:1,fo:1,n:'5',c:'#374151'},{si:1,fo:3,n:'b7',c:'#374151'},
+        {si:2,fo:0,n:'4',c:'#374151'},{si:2,fo:2,n:'5',c:'#374151'},
+        {si:3,fo:0,n:'R',c:'#DC2626'},{si:3,fo:1,n:'♭2',c:'#312E81'},{si:3,fo:2,n:'2',c:'#374151'},
+        {si:4,fo:0,n:'6',c:'#374151'},{si:4,fo:2,n:'b7',c:'#374151'},
+        {si:5,fo:1,n:'R',c:'#DC2626'},{si:5,fo:3,n:'b3',c:'#374151'},
+      ] as dot}
+        {@const cx = 200 + dot.fo*24 + 12}
+        {@const cy = 24 + dot.si*16}
+        {#if dot.n !== '2' || true}
+          <circle cx={cx} cy={cy} r="8" fill={dot.c} opacity="0.9"/>
+          <text x={cx} y={cy+4} text-anchor="middle" font-size={dot.n==='♭2'?6:6.5} fill="white" font-weight="600">{dot.n}</text>
+          {#if dot.n === '♭2'}
+            <text x={cx+8} y={cy-8} text-anchor="middle" font-size="11" fill="#6D28D9">★</text>
+          {/if}
+        {/if}
+      {/each}
+      <text x="160" y="128" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.6" font-style="italic">One note darker. That ♭2 = the Spanish/metal character.</text>
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="A MIXOLYDIAN — MAJOR WITH A BLUESY ♭7">
+    <svg viewBox="0 0 320 140" width="100%" style="display:block;max-width:400px;margin:0 auto" role="img" aria-label="A Mixolydian vs A Major comparison">
+      <text x="70" y="14" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" opacity="0.7">A Major</text>
+      <text x="248" y="14" text-anchor="middle" font-size="9" font-weight="700" fill="#D97706">A Mixolydian</text>
+      <!-- Left fretboard (A Major) -->
+      {#each Array(6) as _, si}
+        <line x1="22" y1={24+si*16} x2="118" y2={24+si*16} stroke="currentColor" stroke-width={si>=3?0.8+si*0.15:0.6} opacity="0.4"/>
+      {/each}
+      {#each [22,46,70,94,118] as fx}
+        <line x1={fx} y1="18" x2={fx} y2="106" stroke="currentColor" stroke-width={fx===22?2:0.6} opacity={fx===22?0.5:0.15}/>
+      {/each}
+      {#each [
+        {si:0,fo:1,n:'R',c:'#DC2626'},{si:0,fo:3,n:'3',c:'#374151'},
+        {si:1,fo:1,n:'5',c:'#374151'},{si:1,fo:3,n:'7',c:'#374151'},
+        {si:2,fo:0,n:'4',c:'#374151'},{si:2,fo:2,n:'5',c:'#374151'},
+        {si:3,fo:0,n:'R',c:'#DC2626'},{si:3,fo:2,n:'2',c:'#374151'},
+        {si:4,fo:0,n:'6',c:'#374151'},{si:4,fo:2,n:'7',c:'#374151'},
+        {si:5,fo:1,n:'R',c:'#DC2626'},{si:5,fo:3,n:'3',c:'#374151'},
+      ] as dot}
+        {@const cx = 22 + dot.fo*24 + 12}
+        {@const cy = 24 + dot.si*16}
+        <circle cx={cx} cy={cy} r="8" fill={dot.c} opacity="0.9"/>
+        <text x={cx} y={cy+4} text-anchor="middle" font-size="6.5" fill="white" font-weight="600">{dot.n}</text>
+      {/each}
+      <!-- Divider -->
+      <line x1="160" y1="10" x2="160" y2="115" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3" opacity="0.3"/>
+      <!-- Right fretboard (Mixolydian — b7 instead of 7) -->
+      {#each Array(6) as _, si}
+        <line x1="200" y1={24+si*16} x2="296" y2={24+si*16} stroke="currentColor" stroke-width={si>=3?0.8+si*0.15:0.6} opacity="0.4"/>
+      {/each}
+      {#each [200,224,248,272,296] as fx}
+        <line x1={fx} y1="18" x2={fx} y2="106" stroke="currentColor" stroke-width={fx===200?2:0.6} opacity={fx===200?0.5:0.15}/>
+      {/each}
+      {#each [
+        {si:0,fo:1,n:'R',c:'#DC2626'},{si:0,fo:3,n:'3',c:'#374151'},
+        {si:1,fo:1,n:'5',c:'#374151'},{si:1,fo:2,n:'♭7',c:'#D97706'},
+        {si:2,fo:0,n:'4',c:'#374151'},{si:2,fo:2,n:'5',c:'#374151'},
+        {si:3,fo:0,n:'R',c:'#DC2626'},{si:3,fo:2,n:'2',c:'#374151'},
+        {si:4,fo:0,n:'6',c:'#374151'},{si:4,fo:1,n:'♭7',c:'#D97706'},
+        {si:5,fo:1,n:'R',c:'#DC2626'},{si:5,fo:3,n:'3',c:'#374151'},
+      ] as dot}
+        {@const cx = 200 + dot.fo*24 + 12}
+        {@const cy = 24 + dot.si*16}
+        <circle cx={cx} cy={cy} r="8" fill={dot.c} opacity="0.9"/>
+        <text x={cx} y={cy+4} text-anchor="middle" font-size={dot.n==='♭7'?6:6.5} fill="white" font-weight="600">{dot.n}</text>
+      {/each}
+      <text x="160" y="128" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.6" font-style="italic">Major scale with a bluesy ♭7. Think Hendrix, Santana.</text>
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="A LYDIAN — MAJOR WITH A FLOATING ♯4">
+    <svg viewBox="0 0 320 140" width="100%" style="display:block;max-width:400px;margin:0 auto" role="img" aria-label="A Lydian vs A Major comparison">
+      <text x="70" y="14" text-anchor="middle" font-size="9" font-weight="700" fill="currentColor" opacity="0.7">A Major</text>
+      <text x="248" y="14" text-anchor="middle" font-size="9" font-weight="700" fill="#0891B2">A Lydian</text>
+      <!-- Left fretboard (A Major) -->
+      {#each Array(6) as _, si}
+        <line x1="22" y1={24+si*16} x2="118" y2={24+si*16} stroke="currentColor" stroke-width={si>=3?0.8+si*0.15:0.6} opacity="0.4"/>
+      {/each}
+      {#each [22,46,70,94,118] as fx}
+        <line x1={fx} y1="18" x2={fx} y2="106" stroke="currentColor" stroke-width={fx===22?2:0.6} opacity={fx===22?0.5:0.15}/>
+      {/each}
+      {#each [
+        {si:0,fo:1,n:'R',c:'#DC2626'},{si:0,fo:3,n:'3',c:'#374151'},
+        {si:1,fo:1,n:'5',c:'#374151'},{si:1,fo:3,n:'7',c:'#374151'},
+        {si:2,fo:0,n:'4',c:'#374151'},{si:2,fo:2,n:'5',c:'#374151'},
+        {si:3,fo:0,n:'R',c:'#DC2626'},{si:3,fo:2,n:'2',c:'#374151'},
+        {si:4,fo:0,n:'6',c:'#374151'},{si:4,fo:2,n:'7',c:'#374151'},
+        {si:5,fo:1,n:'R',c:'#DC2626'},{si:5,fo:3,n:'3',c:'#374151'},
+      ] as dot}
+        {@const cx = 22 + dot.fo*24 + 12}
+        {@const cy = 24 + dot.si*16}
+        <circle cx={cx} cy={cy} r="8" fill={dot.c} opacity="0.9"/>
+        <text x={cx} y={cy+4} text-anchor="middle" font-size="6.5" fill="white" font-weight="600">{dot.n}</text>
+      {/each}
+      <!-- Divider -->
+      <line x1="160" y1="10" x2="160" y2="115" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3" opacity="0.3"/>
+      <!-- Right fretboard (Lydian — #4 instead of 4) -->
+      {#each Array(6) as _, si}
+        <line x1="200" y1={24+si*16} x2="296" y2={24+si*16} stroke="currentColor" stroke-width={si>=3?0.8+si*0.15:0.6} opacity="0.4"/>
+      {/each}
+      {#each [200,224,248,272,296] as fx}
+        <line x1={fx} y1="18" x2={fx} y2="106" stroke="currentColor" stroke-width={fx===200?2:0.6} opacity={fx===200?0.5:0.15}/>
+      {/each}
+      {#each [
+        {si:0,fo:1,n:'R',c:'#DC2626'},{si:0,fo:3,n:'3',c:'#374151'},
+        {si:1,fo:1,n:'5',c:'#374151'},{si:1,fo:3,n:'7',c:'#374151'},
+        {si:2,fo:1,n:'♯4',c:'#0891B2'},{si:2,fo:2,n:'5',c:'#374151'},
+        {si:3,fo:0,n:'R',c:'#DC2626'},{si:3,fo:2,n:'2',c:'#374151'},
+        {si:4,fo:0,n:'6',c:'#374151'},{si:4,fo:2,n:'7',c:'#374151'},
+        {si:5,fo:1,n:'R',c:'#DC2626'},{si:5,fo:3,n:'3',c:'#374151'},
+      ] as dot}
+        {@const cx = 200 + dot.fo*24 + 12}
+        {@const cy = 24 + dot.si*16}
+        <circle cx={cx} cy={cy} r="8" fill={dot.c} opacity="0.9"/>
+        <text x={cx} y={cy+4} text-anchor="middle" font-size={dot.n==='♯4'?6:6.5} fill="white" font-weight="600">{dot.n}</text>
+        {#if dot.n === '♯4'}
+          <text x={cx+8} y={cy-8} text-anchor="middle" font-size="11" fill="#0891B2">★</text>
+        {/if}
+      {/each}
+      <text x="160" y="128" text-anchor="middle" font-size="8" fill="currentColor" opacity="0.6" font-style="italic">Major scale with a raised 4th. Floating. Think Satriani, Vai.</text>
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="MODE CHARACTER WHEEL — BRIGHTEST TO DARKEST">
+    <svg viewBox="0 0 220 220" width="100%" style="display:block;max-width:280px;margin:0 auto" role="img" aria-label="Mode character wheel from brightest to darkest">
+      {#each [
+        {mode:'Lydian',    adj:'Dreamy',   color:'#FBBF24', textC:'#000'},
+        {mode:'Ionian',    adj:'Happy',    color:'#86EFAC', textC:'#000'},
+        {mode:'Mixolydian',adj:'Bluesy',   color:'#60A5FA', textC:'#000'},
+        {mode:'Dorian',    adj:'Jazzy',    color:'#A78BFA', textC:'#000'},
+        {mode:'Aeolian',   adj:'Sad',      color:'#6B7280', textC:'#fff'},
+        {mode:'Phrygian',  adj:'Spanish',  color:'#374151', textC:'#fff'},
+        {mode:'Locrian',   adj:'Dissonant',color:'#111827', textC:'#fff'},
+      ] as seg, i}
+        {@const angle = (i / 7) * 2 * Math.PI - Math.PI / 2}
+        {@const nextAngle = ((i + 1) / 7) * 2 * Math.PI - Math.PI / 2}
+        {@const cx = 110}
+        {@const cy = 110}
+        {@const r = 90}
+        {@const x1 = cx + r * Math.cos(angle)}
+        {@const y1 = cy + r * Math.sin(angle)}
+        {@const x2 = cx + r * Math.cos(nextAngle)}
+        {@const y2 = cy + r * Math.sin(nextAngle)}
+        {@const midAngle = angle + (Math.PI / 7)}
+        {@const tx = cx + 62 * Math.cos(midAngle)}
+        {@const ty = cy + 62 * Math.sin(midAngle)}
+        {@const lx = cx + 100 * Math.cos(midAngle)}
+        {@const ly = cy + 100 * Math.sin(midAngle)}
+        <path d={`M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2} Z`} fill={seg.color} stroke="white" stroke-width="2"/>
+        <text x={tx} y={ty-5} text-anchor="middle" font-size="8" font-weight="700" fill={seg.textC}>{seg.mode}</text>
+        <text x={tx} y={ty+7} text-anchor="middle" font-size="7" fill={seg.textC} opacity="0.85">{seg.adj}</text>
+      {/each}
+      <circle cx="110" cy="110" r="28" fill="white" stroke="#E5E7EB" stroke-width="1.5"/>
+      <text x="110" y="107" text-anchor="middle" font-size="8" fill="#374151" font-weight="700">Bright</text>
+      <text x="110" y="118" text-anchor="middle" font-size="7" fill="#6B7280">↕</text>
+      <text x="110" y="128" text-anchor="middle" font-size="8" fill="#374151" font-weight="700">Dark</text>
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="WHICH MODE OVER WHICH CHORD">
+    <svg viewBox="0 0 300 170" width="100%" style="display:block;max-width:360px;margin:0 auto" role="img" aria-label="Mode-chord pairing table">
+      <!-- Header -->
+      <rect x="0" y="0" width="300" height="24" rx="4" fill="#374151" opacity="0.8"/>
+      <text x="60" y="16" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">Chord Type</text>
+      <text x="170" y="16" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">Use This Mode</text>
+      <text x="260" y="16" text-anchor="middle" font-size="8.5" font-weight="700" fill="white">Sound</text>
+      <!-- Rows -->
+      {#each [
+        {chord:'Maj7',  mode:'Lydian or Ionian',  sound:'bright',   bg:'#FEF3C7', tc:'#000'},
+        {chord:'Dom7',  mode:'Mixolydian',         sound:'bluesy',   bg:'#DBEAFE', tc:'#000'},
+        {chord:'m7',    mode:'Dorian',             sound:'jazzy',    bg:'#EDE9FE', tc:'#000'},
+        {chord:'m (rock)',mode:'Aeolian/Phrygian', sound:'dark',     bg:'#F3F4F6', tc:'#000'},
+        {chord:'m7♭5',  mode:'Locrian',            sound:'dissonant',bg:'#1F2937', tc:'#fff'},
+      ] as row, ri}
+        {@const ry = 28 + ri * 28}
+        <rect x="0" y={ry} width="300" height="26" rx="2" fill={row.bg} opacity="0.7"/>
+        <line x1="0" y1={ry+26} x2="300" y2={ry+26} stroke="currentColor" stroke-width="0.3" opacity="0.2"/>
+        <text x="60" y={ry+16} text-anchor="middle" font-size="9" font-weight="700" fill={row.tc}>{row.chord}</text>
+        <text x="170" y={ry+16} text-anchor="middle" font-size="8.5" fill={row.tc}>{row.mode}</text>
+        <text x="260" y={ry+16} text-anchor="middle" font-size="8.5" fill={row.tc} font-style="italic">{row.sound}</text>
+      {/each}
+    </svg>
+  </Block>
+
+  <Block type="tip">
+    <p><strong>Learn Dorian first.</strong> It's natural minor + one brighter note (the ♯6). Used in 80% of jazz-rock, prog, and fusion leads. Dorian → Mixolydian → Phrygian. One at a time.</p>
+  </Block>
+
+  <Block type="avoid">
+    <p>Don't try to memorize all 7 modes at once. Your brain will short-circuit. Learn the <em>sound</em> and <em>feeling</em> of each mode before worrying about the theory.</p>
+  </Block>
+
+  <Block type="dothis">
+    <p>Play an Am scale. Now emphasize D instead of A as your home note — resolve phrases to D, start licks on D. That's D Dorian. Same notes, completely different feeling. Do this every day for a week.</p>
+  </Block>
+
+  <Block type="check">
+    <CheckItem id="p12-c1" label="Know Dorian shape and sound — can play it over a backing track" />
+    <CheckItem id="p12-c2" label="Know Mixolydian over dominant 7th chords" />
+    <CheckItem id="p12-c3" label="Know Phrygian character (that dark ♭2 note)" />
+    <CheckItem id="p12-c4" label="Can identify which mode suits which chord type" />
+  </Block>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     PHASE 13 — EAR TRAINING
+════════════════════════════════════════════════════ -->
+<section class="section phase" id="phase-13">
+  <div class="phase-header" style="--accent:#059669">
+    <span class="phase-num">Phase 13</span>
+    <h2 class="phase-title">Ear Training</h2>
+  </div>
+
+  <Block type="concept">
+    <p>Your ear is your most important instrument. Every shape must also live in your ear, not just your fingers. A player who can hear is worth 10 players who can only read tab.</p>
+  </Block>
+
+  <Block type="diagram" title="INTERVAL MAP — SONG ANCHORS">
+    <svg viewBox="0 0 340 310" width="100%" style="display:block;max-width:420px;margin:0 auto" role="img" aria-label="Interval map with song anchors">
+      {#each [
+        {name:'Unison',    semi:0,  type:'perfect', song:'Same note',                    color:'#16A34A'},
+        {name:'Min 2nd',   semi:1,  type:'minor',   song:'Jaws theme (dun-dun)',          color:'#DC2626'},
+        {name:'Maj 2nd',   semi:2,  type:'major',   song:'Happy Birthday (first 2 notes)',color:'#2563EB'},
+        {name:'Min 3rd',   semi:3,  type:'minor',   song:'Smoke on the Water',            color:'#DC2626'},
+        {name:'Maj 3rd',   semi:4,  type:'major',   song:'When the Saints Go Marching In',color:'#2563EB'},
+        {name:'Perfect 4th',semi:5, type:'perfect', song:'Here Comes the Bride',          color:'#16A34A'},
+        {name:'Tritone',   semi:6,  type:'tritone', song:'The Simpsons theme',            color:'#9333EA'},
+        {name:'Perfect 5th',semi:7, type:'perfect', song:'Star Wars theme',               color:'#16A34A'},
+        {name:'Min 6th',   semi:8,  type:'minor',   song:'The Entertainer',              color:'#DC2626'},
+        {name:'Maj 6th',   semi:9,  type:'major',   song:'My Bonnie Lies Over the Ocean', color:'#2563EB'},
+        {name:'Min 7th',   semi:10, type:'minor',   song:'Somewhere (West Side Story)',   color:'#DC2626'},
+        {name:'Maj 7th',   semi:11, type:'major',   song:'Take On Me (chorus)',           color:'#2563EB'},
+        {name:'Octave',    semi:12, type:'perfect', song:'Somewhere Over the Rainbow',    color:'#16A34A'},
+      ] as iv, i}
+        {@const ry = 4 + i * 22}
+        <rect x="0" y={ry} width="340" height="20" rx="3" fill={iv.color} opacity="0.08"/>
+        <rect x="0" y={ry} width="4" height="20" rx="2" fill={iv.color} opacity="0.8"/>
+        <text x="42" y={ry+13} font-size="8.5" font-weight="700" fill={iv.color}>{iv.name}</text>
+        <text x="100" y={ry+13} font-size="7.5" fill="currentColor" opacity="0.5">({iv.semi} st)</text>
+        <text x="130" y={ry+13} font-size="8" fill="currentColor" opacity="0.75">{iv.song}</text>
+      {/each}
+      <!-- Legend -->
+      {#each [{c:'#16A34A',l:'Perfect'},{c:'#2563EB',l:'Major'},{c:'#DC2626',l:'Minor'},{c:'#9333EA',l:'Tritone'}] as leg, li}
+        <rect x={li*80+10} y="292" width="10" height="10" rx="2" fill={leg.c} opacity="0.8"/>
+        <text x={li*80+24} y="301" font-size="7.5" fill="currentColor" opacity="0.6">{leg.l}</text>
+      {/each}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="FOUR CHORD QUALITY SOUNDS">
+    <svg viewBox="0 0 300 160" width="100%" style="display:block;max-width:360px;margin:0 auto" role="img" aria-label="Four chord quality sounds">
+      {#each [
+        {name:'Major',       qual:'Bright / resolved / happy',  example:'C major',   genre:'Pop, folk, country', color:'#16A34A', x:0,   y:0},
+        {name:'Minor',       qual:'Dark / melancholic / sad',   example:'Am',        genre:'Rock, blues, ballad', color:'#DC2626', x:152, y:0},
+        {name:'Dom 7th',     qual:'Tense / bluesy / restless',  example:'G7',        genre:'Blues, jazz, funk',   color:'#D97706', x:0,   y:82},
+        {name:'Minor 7th',   qual:'Mellow / jazzy / relaxed',   example:'Am7',       genre:'Jazz, soul, R&B',     color:'#7C3AED', x:152, y:82},
+      ] as box}
+        <rect x={box.x+2} y={box.y+2} width="144" height="76" rx="8" fill={box.color} opacity="0.1" stroke={box.color} stroke-width="1.5"/>
+        <text x={box.x+72} y={box.y+20} text-anchor="middle" font-size="11" font-weight="800" fill={box.color}>{box.name}</text>
+        <text x={box.x+72} y={box.y+36} text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.8">{box.qual}</text>
+        <text x={box.x+72} y={box.y+52} text-anchor="middle" font-size="8.5" font-weight="700" fill={box.color}>e.g. {box.example}</text>
+        <text x={box.x+72} y={box.y+68} text-anchor="middle" font-size="7" fill="currentColor" opacity="0.5">{box.genre}</text>
+      {/each}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="TRANSCRIPTION PROCESS FLOWCHART">
+    <svg viewBox="0 0 240 290" width="100%" style="display:block;max-width:300px;margin:0 auto" role="img" aria-label="Transcription process flowchart">
+      <defs>
+        <marker id="arr-flow" markerWidth="6" markerHeight="5" refX="3" refY="5" orient="auto">
+          <polygon points="0 0, 6 0, 3 5" fill="#6B7280"/>
+        </marker>
+      </defs>
+      {#each [
+        {y:8,  label:'1. Listen → find the pulse',  sub:'Tap along — feel the tempo',       color:'#2563EB', dash:false},
+        {y:68, label:'2. Find the key',             sub:'Play notes until one feels "home"', color:'#16A34A', dash:false},
+        {y:128,label:'3. Identify chord types',     sub:'Major? Minor? 7th?',               color:'#D97706', dash:false},
+        {y:188,label:'4. Transcribe melody',        sub:'One note at a time, by ear',        color:'#7C3AED', dash:false},
+        {y:248,label:'5. Check with tab',           sub:'LAST resort — only after you tried',color:'#DC2626', dash:true},
+      ] as step, si}
+        <rect x="10" y={step.y} width="220" height="52" rx="8"
+          fill={step.color} opacity="0.1"
+          stroke={step.color} stroke-width={step.dash?1.5:1.5}
+          stroke-dasharray={step.dash?'5 3':'none'}/>
+        <text x="120" y={step.y+20} text-anchor="middle" font-size="9" font-weight="700" fill={step.color}>{step.label}</text>
+        <text x="120" y={step.y+36} text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.7">{step.sub}</text>
+        {#if si < 4}
+          <line x1="120" y1={step.y+52} x2="120" y2={step.y+68} stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr-flow)" opacity="0.5"/>
+        {/if}
+      {/each}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="FINDING THE KEY — TRIAL AND ERROR">
+    <svg viewBox="0 0 300 180" width="100%" style="display:block;max-width:360px;margin:0 auto" role="img" aria-label="Finding the key by trial and error">
+      <defs>
+        <marker id="arr-key" markerWidth="6" markerHeight="5" refX="3" refY="5" orient="auto">
+          <polygon points="0 0, 6 0, 3 5" fill="#6B7280"/>
+        </marker>
+      </defs>
+      <!-- Start -->
+      <rect x="75" y="5" width="150" height="30" rx="6" fill="#2563EB" opacity="0.2" stroke="#2563EB" stroke-width="1.5"/>
+      <text x="150" y="24" text-anchor="middle" font-size="8.5" font-weight="700" fill="#2563EB">Play Am pent over song</text>
+      <line x1="150" y1="35" x2="150" y2="55" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr-key)" opacity="0.5"/>
+      <!-- Diamond decision -->
+      <polygon points="150,55 200,75 150,95 100,75" fill="#D97706" opacity="0.15" stroke="#D97706" stroke-width="1.5"/>
+      <text x="150" y="78" text-anchor="middle" font-size="8" font-weight="700" fill="#D97706">Does it fit?</text>
+      <!-- Yes branch -->
+      <line x1="200" y1="75" x2="240" y2="75" stroke="#16A34A" stroke-width="1.5" marker-end="url(#arr-key)" opacity="0.7"/>
+      <rect x="240" y="60" width="55" height="30" rx="5" fill="#16A34A" opacity="0.15" stroke="#16A34A" stroke-width="1.5"/>
+      <text x="267" y="73" text-anchor="middle" font-size="7.5" font-weight="700" fill="#16A34A">✓ Am or</text>
+      <text x="267" y="84" text-anchor="middle" font-size="7.5" fill="#16A34A">C major!</text>
+      <!-- No branch -->
+      <line x1="150" y1="95" x2="150" y2="115" stroke="#DC2626" stroke-width="1.5" marker-end="url(#arr-key)" opacity="0.7"/>
+      <rect x="70" y="115" width="160" height="28" rx="5" fill="#DC2626" opacity="0.1" stroke="#DC2626" stroke-width="1.5"/>
+      <text x="150" y="133" text-anchor="middle" font-size="8" fill="#DC2626">Move up 2 frets (Bm pent)</text>
+      <line x1="150" y1="143" x2="150" y2="158" stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr-key)" opacity="0.5"/>
+      <rect x="65" y="158" width="170" height="20" rx="4" fill="#374151" opacity="0.15"/>
+      <text x="150" y="172" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.6">Repeat until something fits → that's your key</text>
+      <text x="95" y="87" text-anchor="middle" font-size="7.5" fill="#DC2626" opacity="0.7">No ↓</text>
+      <text x="220" y="68" text-anchor="middle" font-size="7.5" fill="#16A34A" opacity="0.7">Yes →</text>
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="RELATIVE PITCH EXERCISE — DAILY LOOP">
+    <svg viewBox="0 0 220 220" width="100%" style="display:block;max-width:280px;margin:0 auto" role="img" aria-label="Relative pitch exercise circular diagram">
+      {#each [
+        {label:'Play a note',       color:'#2563EB', angle: -90},
+        {label:'Sing it',           color:'#16A34A', angle: -30},
+        {label:'Play another note', color:'#D97706', angle:  30},
+        {label:'Sing the interval', color:'#7C3AED', angle:  90},
+        {label:'Find it on guitar', color:'#DC2626', angle: 150},
+        {label:'Repeat',            color:'#059669', angle: 210},
+      ] as step, i}
+        {@const rad = (step.angle * Math.PI) / 180}
+        {@const cx = 110 + 78 * Math.cos(rad)}
+        {@const cy = 110 + 78 * Math.sin(rad)}
+        {@const nextRad = ((step.angle + 60) * Math.PI) / 180}
+        {@const nx = 110 + 78 * Math.cos(nextRad)}
+        {@const ny = 110 + 78 * Math.sin(nextRad)}
+        <!-- Arrow to next node -->
+        {@const midRad = ((step.angle + 30) * Math.PI) / 180}
+        {@const ax = 110 + 78 * Math.cos(midRad)}
+        {@const ay = 110 + 78 * Math.sin(midRad)}
+        <circle cx={cx} cy={cy} r="26" fill={step.color} opacity="0.15" stroke={step.color} stroke-width="1.5"/>
+        <text x={cx} y={cy-4} text-anchor="middle" font-size="7.5" font-weight="700" fill={step.color}>{step.label.split(' ')[0]}</text>
+        <text x={cx} y={cy+7} text-anchor="middle" font-size="7" fill={step.color}>{step.label.split(' ').slice(1).join(' ')}</text>
+      {/each}
+      <circle cx="110" cy="110" r="22" fill="white" stroke="#E5E7EB" stroke-width="1"/>
+      <text x="110" y="107" text-anchor="middle" font-size="7.5" font-weight="700" fill="#374151">Daily</text>
+      <text x="110" y="118" text-anchor="middle" font-size="7.5" fill="#374151">Loop</text>
+    </svg>
+  </Block>
+
+  <Block type="tip">
+    <p><strong>Sing every lick before you play it.</strong> If you can sing it, you own it. If you can't sing it, you're just moving fingers. This single habit separates ear players from tab readers.</p>
+  </Block>
+
+  <Block type="avoid">
+    <p>Don't skip ear training because it feels slow. It's the single biggest skill separator between players. The player with the best ear always wins.</p>
+  </Block>
+
+  <Block type="dothis">
+    <p>Every day: listen to a song, find the key by ear (no cheating), then verify. 10 minutes of active listening beats 1 hour of tabs. Build this habit now.</p>
+  </Block>
+
+  <Block type="check">
+    <CheckItem id="p13-c1" label="Can identify major vs minor chord by ear instantly" />
+    <CheckItem id="p13-c2" label="Know 5 interval anchors (can sing/recognise them)" />
+    <CheckItem id="p13-c3" label="Can find the key of a simple song by ear" />
+    <CheckItem id="p13-c4" label="Can sing a lick before playing it on guitar" />
+  </Block>
+</section>
+
+<!-- ═══════════════════════════════════════════════════
+     PHASE 14 — PRACTICE STRUCTURE
+════════════════════════════════════════════════════ -->
+<section class="section phase" id="phase-14">
+  <div class="phase-header" style="--accent:#0284C7">
+    <span class="phase-num">Phase 14</span>
+    <h2 class="phase-title">Practice Structure</h2>
+  </div>
+
+  <Block type="concept">
+    <p>Deliberate practice beats random noodling at a 10:1 ratio. Same 20 minutes — completely different outcomes. Structure your time, and you'll improve at a rate that will shock you.</p>
+  </Block>
+
+  <Block type="diagram" title="30-MINUTE PRACTICE BLUEPRINT">
+    <svg viewBox="0 0 280 200" width="100%" style="display:block;max-width:340px;margin:0 auto" role="img" aria-label="30-minute practice blueprint timeline">
+      <defs>
+        <marker id="arr-prac" markerWidth="6" markerHeight="5" refX="3" refY="5" orient="auto">
+          <polygon points="0 0, 6 0, 3 5" fill="#6B7280"/>
+        </marker>
+      </defs>
+      {#each [
+        {time:'0–5 min',  label:'WARM UP',        sub:'Chromatic • stretches • slow scales', color:'#16A34A', h:38},
+        {time:'5–15 min', label:'TECHNIQUE FOCUS', sub:'Current phase • targeted drills',     color:'#2563EB', h:48},
+        {time:'15–20 min',label:'THEORY',          sub:'One concept, one exercise',           color:'#7C3AED', h:38},
+        {time:'20–30 min',label:'REPERTOIRE',      sub:'Song you\'re learning — fun time!',   color:'#D97706', h:48},
+      ] as block, bi}
+        {@const blockY = bi === 0 ? 10 : bi === 1 ? 58 : bi === 2 ? 116 : 164}
+        <rect x="60" y={blockY} width="210" height={block.h} rx="6" fill={block.color} opacity="0.12" stroke={block.color} stroke-width="1.5"/>
+        <text x="10" y={blockY + block.h/2 - 4} font-size="7" fill="currentColor" opacity="0.5">{block.time}</text>
+        <text x="165" y={blockY + 16} text-anchor="middle" font-size="10" font-weight="800" fill={block.color}>{block.label}</text>
+        <text x="165" y={blockY + 30} text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.7">{block.sub}</text>
+        {#if bi < 3}
+          <line x1="165" y1={blockY+block.h} x2="165" y2={blockY+block.h+10} stroke="#6B7280" stroke-width="1.5" marker-end="url(#arr-prac)" opacity="0.4"/>
+        {/if}
+      {/each}
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="THE SKILL ACQUISITION LOOP">
+    <svg viewBox="0 0 240 240" width="100%" style="display:block;max-width:300px;margin:0 auto" role="img" aria-label="Skill acquisition loop circular diagram">
+      {#each [
+        {label:'Learn new concept',     color:'#2563EB', angle:-90},
+        {label:'Slow isolated practice',color:'#16A34A', angle:-30},
+        {label:'Find weakest part',     color:'#D97706', angle: 30},
+        {label:'Drill that part',       color:'#DC2626', angle: 90},
+        {label:'Reintegrate',           color:'#7C3AED', angle:150},
+        {label:'Increase tempo',        color:'#059669', angle:210},
+      ] as node, ni}
+        {@const rad = (node.angle * Math.PI) / 180}
+        {@const cx = 120 + 85 * Math.cos(rad)}
+        {@const cy = 120 + 85 * Math.sin(rad)}
+        <circle cx={cx} cy={cy} r="28" fill={node.color} opacity="0.12" stroke={node.color} stroke-width="1.5"/>
+        <text x={cx} y={cy-3} text-anchor="middle" font-size="7" font-weight="700" fill={node.color}>{node.label.split(' ')[0]}</text>
+        <text x={cx} y={cy+8} text-anchor="middle" font-size="6.5" fill={node.color}>{node.label.split(' ').slice(1).join(' ')}</text>
+      {/each}
+      <circle cx="120" cy="120" r="24" fill="white" stroke="#E5E7EB" stroke-width="1"/>
+      <text x="120" y="117" text-anchor="middle" font-size="7.5" font-weight="700" fill="#374151">Skill</text>
+      <text x="120" y="128" text-anchor="middle" font-size="7.5" fill="#374151">Loop</text>
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="SPACED REPETITION SCHEDULE">
+    <svg viewBox="0 0 300 130" width="100%" style="display:block;max-width:360px;margin:0 auto" role="img" aria-label="Spaced repetition schedule">
+      {#each [
+        {day:'Day 0',  label:'Learn',  mins:30, color:'#2563EB'},
+        {day:'Day 1',  label:'Review', mins:15, color:'#16A34A'},
+        {day:'Day 3',  label:'Review', mins:10, color:'#16A34A'},
+        {day:'Day 7',  label:'Review', mins:5,  color:'#D97706'},
+        {day:'Day 14', label:'Review', mins:5,  color:'#D97706'},
+        {day:'Day 30', label:'Review', mins:2,  color:'#9CA3AF'},
+      ] as bar, bi}
+        {@const barW = bar.mins * 5}
+        {@const ry = 10 + bi * 17}
+        <text x="32" y={ry+11} text-anchor="end" font-size="7.5" fill="currentColor" opacity="0.6">{bar.day}</text>
+        <rect x="36" y={ry} width={barW} height="13" rx="3" fill={bar.color} opacity="0.7"/>
+        <text x={36+barW+4} y={ry+10} font-size="7" fill="currentColor" opacity="0.55">{bar.mins} min</text>
+      {/each}
+      <text x="150" y="122" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.5" font-style="italic">Review before you forget — not after.</text>
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="REALISTIC PROGRESS CURVE">
+    <svg viewBox="0 0 300 160" width="100%" style="display:block;max-width:360px;margin:0 auto" role="img" aria-label="Realistic guitar progress curve">
+      <!-- Axes -->
+      <line x1="30" y1="130" x2="290" y2="130" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+      <line x1="30" y1="10" x2="30" y2="130" stroke="currentColor" stroke-width="1" opacity="0.3"/>
+      <text x="160" y="148" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.5">Time →</text>
+      <text x="12" y="70" text-anchor="middle" font-size="7.5" fill="currentColor" opacity="0.5" transform="rotate(-90,12,70)">Skill →</text>
+      <!-- S-curve path: fast gains → plateau → breakthrough → plateau → breakthrough -->
+      <path d="M 30 125 C 55 120, 70 90, 90 85 L 120 83 C 140 83, 150 70, 170 55 L 195 53 C 215 53, 225 38, 250 28 L 290 22"
+        stroke="#2563EB" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <!-- Plateau labels -->
+      {#each [
+        {x:105, y:83, label:'Normal. Keep going.', color:'#D97706'},
+        {x:182, y:53, label:'Normal. Keep going.', color:'#D97706'},
+      ] as p}
+        <rect x={p.x-38} y={p.y-10} width="78" height="14" rx="3" fill={p.color} opacity="0.12"/>
+        <text x={p.x} y={p.y+1} text-anchor="middle" font-size="6.5" fill={p.color} font-weight="700">{p.label}</text>
+      {/each}
+      <!-- Breakthrough labels -->
+      {#each [
+        {x:160, y:62, label:'Breakthrough!'},
+        {x:235, y:42, label:'Breakthrough!'},
+      ] as b}
+        <text x={b.x} y={b.y} text-anchor="middle" font-size="7" fill="#16A34A" font-weight="700">{b.label}</text>
+        <text x={b.x} y={b.y+9} text-anchor="middle" font-size="13">↑</text>
+      {/each}
+      <!-- "most people quit" annotation -->
+      <line x1="120" y1="83" x2="120" y2="110" stroke="#DC2626" stroke-width="1" stroke-dasharray="3 2" opacity="0.6"/>
+      <text x="120" y="120" text-anchor="middle" font-size="6.5" fill="#DC2626" opacity="0.8">most people quit here</text>
+    </svg>
+  </Block>
+
+  <Block type="diagram" title="WEEKLY PRACTICE SCHEDULE">
+    <div style="overflow-x:auto">
+    <svg viewBox="0 0 420 70" width="100%" style="display:block;min-width:340px" role="img" aria-label="Weekly practice schedule grid">
+      {#each [
+        {day:'Mon', focus:'Technique', color:'#2563EB'},
+        {day:'Tue', focus:'Theory',    color:'#7C3AED'},
+        {day:'Wed', focus:'Song',      color:'#D97706'},
+        {day:'Thu', focus:'Technique', color:'#2563EB'},
+        {day:'Fri', focus:'Improv',    color:'#DC2626'},
+        {day:'Sat', focus:'Full Sesh', color:'#16A34A'},
+        {day:'Sun', focus:'Rest / Listen', color:'#9CA3AF'},
+      ] as col, ci}
+        {@const cx = 4 + ci * 60}
+        <rect x={cx} y="4" width="56" height="60" rx="6" fill={col.color} opacity={col.day==='Sun'?0.08:0.12} stroke={col.color} stroke-width="1.5"/>
+        <text x={cx+28} y="22" text-anchor="middle" font-size="9" font-weight="800" fill={col.color}>{col.day}</text>
+        <text x={cx+28} y="38" text-anchor="middle" font-size="7.5" font-weight="600" fill={col.color}>{col.focus.split(' ')[0]}</text>
+        {#if col.focus.split(' ').length > 1}
+          <text x={cx+28} y="50" text-anchor="middle" font-size="7" fill={col.color} opacity="0.8">{col.focus.split(' ').slice(1).join(' ')}</text>
+        {/if}
+      {/each}
+    </svg>
+    </div>
+  </Block>
+
+  <Block type="tip">
+    <p><strong>Record a 1-minute clip every week.</strong> Your ears lie to you in the moment. The recording doesn't. Progress is invisible in the short term — the recording makes it visible.</p>
+  </Block>
+
+  <Block type="avoid">
+    <p>Never practice your mistakes repeatedly. Stop the moment something goes wrong, isolate that specific bar or movement, fix it slowly, then reintegrate. Repetition makes permanent — make sure you're repeating the right thing.</p>
+  </Block>
+
+  <Block type="dothis">
+    <p>Write down your practice plan <strong>before</strong> you pick up the guitar. 3 items max. Track what you did after. One week of structured practice will feel like a month of noodling.</p>
+  </Block>
+
+  <Block type="check">
+    <CheckItem id="p14-c1" label="Have a written practice routine — not just winging it" />
+    <CheckItem id="p14-c2" label="Practice with a metronome every single session" />
+    <CheckItem id="p14-c3" label="Record yourself weekly and listen back" />
+    <CheckItem id="p14-c4" label="Can identify your current weakest skill and drill it" />
   </Block>
 </section>
 
